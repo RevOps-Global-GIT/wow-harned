@@ -425,5 +425,4 @@ export class AmbientEngine {
   }
 
   // Murmur reverb removed — using real recording now
-  }
 }
