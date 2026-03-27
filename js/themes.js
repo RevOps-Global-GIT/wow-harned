@@ -219,6 +219,7 @@ export const THEMES = {
 
       // Eli
       ['', 'I CAME', 'I SAW', 'I ASKED FOR', 'A SNACK', '', '- ELI HARNED', ''],
+      ['', 'MY BROTHER IS', 'MY BEST FRIEND', 'DONT TELL HIM', 'I SAID THAT', '', '- ELI HARNED', ''],
 
       // Pam
       ['', 'PATIENCE IS', 'A VIRTUE', 'ESPECIALLY', 'WHEN MARRIED', 'TO A HARNED', '', '- PAM HARNED'],
