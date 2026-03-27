@@ -88,6 +88,11 @@ export class SoundEngine {
 
   toggleMute() {
     this.muted = !this.muted;
+    // Immediately stop any playing sound when muting
+    if (this.muted && this._currentSource) {
+      try { this._currentSource.stop(); } catch {}
+      this._currentSource = null;
+    }
     return this.muted;
   }
 

@@ -61,12 +61,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const r = board.rows;
 
     if (isMobilePortrait()) {
-      // Portrait: width-constrained tiles with taller aspect ratio
-      // Use 85% of viewport height — board-wrap CSS handles safe area padding
-      // and flexbox centering, so the grid lands in the right spot
+      // Portrait: fill as much vertical space as possible
+      // Minimal margins so top/bottom asymmetry is barely visible
       const gap = 1;
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
-      const targetH = vh * 0.85;
+      const targetH = vh * 0.94;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');
