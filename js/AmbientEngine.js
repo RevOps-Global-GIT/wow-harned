@@ -83,7 +83,16 @@ export class AmbientEngine {
     // Restart with new track if running
     if (this._running) {
       this.stop();
-      setTimeout(() => { this.enabled = true; this.start(); }, 500);
+      // Wait for stop() cleanup (2s fade + disconnect) before restarting
+      setTimeout(() => {
+        this._running = false;
+        this._masterGain = null;
+        this._musicGain = null;
+        this._murmurGain = null;
+        this._activeSources = [];
+        this.enabled = true;
+        this.start();
+      }, 2200);
     }
   }
 
