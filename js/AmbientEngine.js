@@ -21,6 +21,15 @@ export const MUSIC_TRACK_OPTIONS = Object.entries(MUSIC_TRACKS).map(([k, v]) => 
 export class AmbientEngine {
   constructor(soundEngine) {
     this.soundEngine = soundEngine;
+
+    // Version reset: clear old volume prefs so new defaults take effect
+    if (localStorage.getItem('flipoff_prefs_v') !== '2') {
+      localStorage.removeItem(AMBIENT_VOL_KEY);
+      localStorage.removeItem(MURMUR_VOL_KEY);
+      localStorage.removeItem(CLICK_VOL_KEY);
+      localStorage.setItem('flipoff_prefs_v', '2');
+    }
+
     this.enabled = this._loadState();
 
     try {
