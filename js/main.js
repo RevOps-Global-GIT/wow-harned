@@ -76,6 +76,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Larger font for portrait — use 55% of tile width
       board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
+
+      // Position accent dots to overlap the grid top/bottom edges
+      const gridH = r * tileH + (r - 1) * gap;
+      const gridTop = (vh - gridH) / 2; // centered by flexbox
+      document.documentElement.style.setProperty('--accent-top', (gridTop - 4) + 'px');
+      document.documentElement.style.setProperty('--accent-bottom', (gridTop - 4) + 'px');
     } else if (vw <= 900 && vh < vw) {
       // Mobile landscape: rectangular tiles, fill both dimensions independently
       const gap = 1;
