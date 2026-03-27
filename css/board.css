@@ -1,15 +1,14 @@
 /* Board Container */
 .board {
-  --tile-size: clamp(36px, 4.2vw, 62px);
-  --tile-gap: clamp(3px, 0.3vw, 5px);
+  --tile-size: 4.2vw;
+  --tile-gap: clamp(2px, 0.3vw, 5px);
 
   position: relative;
-  background: #1A1A1A;
-  border-radius: 16px;
-  padding: 28px 48px 40px;
+  background: #111;
+  border-radius: 0;
+  padding: 0;
   width: 100%;
-  box-shadow:
-    0 -4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -22,14 +21,9 @@
   justify-content: center;
 }
 
-/* Accent Squares — small stacked blocks in top corners */
+/* Accent Squares — hidden in fullscreen mode */
 .accent-bar {
-  position: absolute;
-  top: 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  z-index: 5;
+  display: none;
 }
 
 .accent-bar-left {
@@ -105,15 +99,7 @@
   margin-left: 16px;
 }
 
-/* Scroll indicator at bottom of board */
+/* Scroll indicator — hidden in stripped mode */
 .board::after {
-  content: '';
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.15);
+  display: none;
 }

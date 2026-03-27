@@ -1,7 +1,9 @@
 export class KeyboardController {
-  constructor(rotator, soundEngine) {
+  constructor(rotator, soundEngine, settings, ambientEngine) {
     this.rotator = rotator;
     this.soundEngine = soundEngine;
+    this.settings = settings;
+    this.ambientEngine = ambientEngine;
 
     document.addEventListener('keydown', (e) => this._handleKey(e));
   }
@@ -42,8 +44,26 @@ export class KeyboardController {
         }
         break;
 
+      case 's':
+      case 'S':
+        e.preventDefault();
+        if (this.settings) this.settings.toggle();
+        break;
+
+      case 'a':
+      case 'A':
+        e.preventDefault();
+        if (this.ambientEngine) {
+          const on = this.ambientEngine.toggle();
+          this._showToast(on ? 'Ambient on' : 'Ambient off');
+          if (this.settings) this.settings._render();
+        }
+        break;
+
       case 'Escape':
-        if (document.fullscreenElement) {
+        if (this.settings && this.settings.visible) {
+          this.settings.toggle();
+        } else if (document.fullscreenElement) {
           document.exitFullscreen();
         }
         // Also hide shortcuts overlay

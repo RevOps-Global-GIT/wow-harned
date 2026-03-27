@@ -51,7 +51,7 @@ export class Board {
     // Keyboard hint icon (bottom-left)
     const hint = document.createElement('div');
     hint.className = 'keyboard-hint';
-    hint.textContent = 'N';
+    hint.textContent = '?';
     hint.title = 'Keyboard shortcuts';
     hint.addEventListener('click', (e) => {
       e.stopPropagation();

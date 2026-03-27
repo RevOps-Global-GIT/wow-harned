@@ -2,49 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#111111">
-  <title>FlipOff. — Free Split-Flap Display for Any TV</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <title>FlipOff.</title>
   <link rel="stylesheet" href="css/reset.css">
-  <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/board.css">
   <link rel="stylesheet" href="css/tile.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      cursor: none;
+    }
+    body.show-cursor { cursor: default; }
+    .board-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      height: 100dvh;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .tap-hint {
+      position: fixed;
+      bottom: 32px;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.3);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      transition: opacity 0.5s;
+      text-align: center;
+      max-width: 80vw;
+    }
+    .tap-hint.hidden { opacity: 0; pointer-events: none; }
+
+    /* iOS home screen banner */
+    .ios-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 14px 20px;
+      padding-bottom: calc(env(safe-area-inset-bottom, 14px) + 14px);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 2000;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: transform 0.3s ease;
+    }
+    .ios-banner.dismissed { transform: translateY(100%); pointer-events: none; }
+    .ios-banner-icon {
+      width: 36px;
+      height: 36px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ios-banner-text {
+      flex: 1;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .ios-banner-text strong {
+      color: #fff;
+      font-weight: 600;
+    }
+    .ios-banner-close {
+      background: none;
+      color: rgba(255,255,255,0.3);
+      font-size: 20px;
+      padding: 4px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
-
-  <div class="page-frame">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-logo">FlipOff.</div>
-      <nav class="header-nav">
-        <a href="#features">Features</a>
-        <a href="#pricing">Pricing</a>
-        <button class="volume-icon" id="volume-btn" title="Toggle sound">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-          </svg>
-        </button>
-      </nav>
-    </header>
-
-    <!-- Hero -->
-    <section class="hero">
-      <h1>Turn any TV into a retro split-flap display.</h1>
-      <p class="subtitle">The classic flip-board look, without the $3,500 hardware.</p>
-      <div class="hero-cta">
-        <input type="email" placeholder="you@example.com">
-        <button id="cta-btn">Get Early Access</button>
-      </div>
-    </section>
-
-    <!-- Board -->
-    <section class="board-section" id="board-container">
-    </section>
-  </div>
-
+  <div class="board-wrap" id="board-container"></div>
+  <div class="tap-hint" id="tap-hint">tap to start . double-tap for settings</div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

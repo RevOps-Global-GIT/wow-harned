@@ -1,5 +1,7 @@
 import { FLAP_AUDIO_BASE64 } from './flapAudio.js';
 
+const CLICK_VOL_KEY = 'flipoff_click_vol';
+
 export class SoundEngine {
   constructor() {
     this.ctx = null;
@@ -7,6 +9,18 @@ export class SoundEngine {
     this._initialized = false;
     this._audioBuffer = null;
     this._currentSource = null;
+
+    try {
+      const saved = localStorage.getItem(CLICK_VOL_KEY);
+      this.clickVolume = saved !== null ? parseFloat(saved) : 0.8;
+    } catch {
+      this.clickVolume = 0.8;
+    }
+  }
+
+  setClickVolume(val) {
+    this.clickVolume = val;
+    localStorage.setItem(CLICK_VOL_KEY, String(val));
   }
 
   async init() {
@@ -60,7 +74,7 @@ export class SoundEngine {
     source.buffer = this._audioBuffer;
 
     const gain = this.ctx.createGain();
-    gain.gain.value = 0.8;
+    gain.gain.value = this.clickVolume;
 
     source.connect(gain);
     gain.connect(this.ctx.destination);
