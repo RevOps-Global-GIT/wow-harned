@@ -50,11 +50,11 @@
     }
     .tap-hint.hidden { opacity: 0; pointer-events: none; }
 
-    /* Mobile portrait — shift down to visually center below Dynamic Island */
+    /* Mobile portrait — center below status bar/notch/island */
     @media (max-width: 600px) and (orientation: portrait) {
       .board-wrap {
         align-items: center;
-        padding: 60px 0 0 0;
+        padding: calc(env(safe-area-inset-top, 20px) + 10px) 0 0 0;
       }
       .tap-hint { display: none; }
     }
