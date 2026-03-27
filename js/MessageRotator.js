@@ -85,8 +85,17 @@ export class MessageRotator {
   _getPool() {
     const themeMessages = [];
     if (this.mode === 'themes' || this.mode === 'combined') {
+      // Check for local edits stored by SettingsPanel
+      let edits = {};
+      try {
+        const saved = localStorage.getItem('flipoff_theme_edits');
+        if (saved) edits = JSON.parse(saved);
+      } catch {}
+
       for (const key of this.enabledThemes) {
-        if (THEMES[key]) {
+        if (edits[key]) {
+          themeMessages.push(...edits[key]);
+        } else if (THEMES[key]) {
           themeMessages.push(...THEMES[key].messages);
         }
       }
