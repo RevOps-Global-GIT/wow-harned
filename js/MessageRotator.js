@@ -136,8 +136,11 @@ export class MessageRotator {
     const rows = this.board.rows;
     const mid = Math.floor(rows / 2);
     const lines = Array(rows).fill('');
-    lines[mid - 1] = 'GOOD';
-    lines[mid] = word;
+    lines[mid - 2] = 'GOOD';
+    lines[mid - 1] = word;
+    lines[mid + 1] = 'HARNED';
+    lines[mid + 2] = 'WORDS OF';
+    lines[mid + 3] = 'WISDOM';
     return lines;
   }
 
