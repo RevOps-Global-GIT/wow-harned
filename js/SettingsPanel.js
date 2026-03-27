@@ -190,31 +190,25 @@ export class SettingsPanel {
       /* Tab bar */
       .sp-tabs {
         display: flex;
-        overflow-x: auto;
-        gap: 0;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        margin: 0 -16px 12px;
-        padding: 0 16px;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin: 0 0 12px;
         flex-shrink: 0;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
       }
-      .sp-tabs::-webkit-scrollbar { display: none; }
       .sp-tab {
-        padding: 10px 14px;
-        color: rgba(255,255,255,0.5);
-        font-size: 13px;
+        padding: 6px 10px;
+        color: rgba(255,255,255,0.45);
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
-        border-bottom: 2px solid transparent;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
         transition: all 0.15s;
-        flex-shrink: 0;
         background: rgba(255,255,255,0.03);
-        border-radius: 6px 6px 0 0;
       }
-      .sp-tab:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); }
-      .sp-tab.active { color: #fff; border-bottom-color: #00aaff; background: rgba(0,170,255,0.08); }
+      .sp-tab:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+      .sp-tab.active { color: #fff; border-color: rgba(0,170,255,0.4); background: rgba(0,170,255,0.1); }
       .sp-tab .sp-tab-count {
         color: rgba(255,255,255,0.2);
         font-size: 10px;
