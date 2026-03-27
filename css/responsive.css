@@ -59,7 +59,7 @@
   }
 }
 
-/* Landscape mobile — accent bars top/bottom centered */
+/* Landscape mobile — accent bars left/right like desktop */
 @media (max-height: 500px) {
   .board {
     padding: 4px 8px 8px;
@@ -67,26 +67,24 @@
 
   .accent-bar {
     display: flex;
-    flex-direction: row;
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    top: auto;
+    flex-direction: column;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: auto;
     right: auto;
     gap: 4px;
-    z-index: 10;
   }
 
   .accent-bar-left {
-    top: 4px;
-    left: 50%;
+    left: 8px;
+    top: 50%;
   }
 
   .accent-bar-right {
-    bottom: 4px;
-    top: auto;
-    right: auto;
-    left: 50%;
+    right: 8px;
+    left: auto;
+    top: 50%;
   }
 
   .accent-segment {

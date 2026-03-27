@@ -77,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
       board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
     } else if (vw <= 900 && vh < vw) {
-      // Mobile landscape: wider tiles, use more horizontal space
+      // Mobile landscape: fill width and height
       const gap = 2;
-      const tileW = Math.floor((vw * 0.95 - (c + 1) * gap) / c);
-      const tileH = Math.floor((vh * 0.9 - (r + 1) * gap) / r);
+      const tileW = Math.floor((vw - (c + 1) * gap) / c);
+      const tileH = Math.floor((vh * 0.95 - (r + 1) * gap) / r);
       const tileSize = Math.min(tileW, tileH);
       board.boardEl.style.setProperty('--tile-size', tileSize + 'px');
       board.boardEl.style.setProperty('--tile-h', tileSize + 'px');
