@@ -223,6 +223,27 @@ export const THEMES = {
       ['', 'PATIENCE IS', 'A VIRTUE', 'ESPECIALLY', 'WHEN MARRIED', 'TO A HARNED', '', '- PAM HARNED'],
     ]
   },
+  contemplative: {
+    label: 'Contemplative',
+    messages: [
+      ['', 'EVERYTHING', 'BELONGS', '', '', '', '- RICHARD ROHR', ''],
+      ['', 'WE DO NOT', 'THINK', 'OURSELVES', 'INTO NEW WAYS', 'OF LIVING', '', '- RICHARD ROHR'],
+      ['', 'THE BEST', 'CRITICISM OF', 'THE BAD IS', 'THE PRACTICE', 'OF THE BETTER', '', '- RICHARD ROHR'],
+      ['', 'IF WE DO NOT', 'TRANSFORM', 'OUR PAIN', 'WE WILL', 'TRANSMIT IT', '', '- RICHARD ROHR'],
+      ['', 'GOD COMES TO', 'US DISGUISED', 'AS OUR LIFE', '', '', '- RICHARD ROHR', ''],
+      ['', 'YOU CANNOT', 'SEE WHAT YOU', 'CANNOT LOVE', '', '', '- RICHARD ROHR', ''],
+      ['', 'THE PEOPLE', 'WHO KNOW GOD', 'WELL ARE', 'ALWAYS THE', 'LOVERS', '', '- RICHARD ROHR'],
+      ['', 'WE ARE', 'ALREADY ONE', 'WE JUST', 'IMAGINE THAT', 'WE ARE NOT', '', '- THOMAS MERTON'],
+      ['', 'THE GATE OF', 'HEAVEN IS', 'EVERYWHERE', '', '', '- THOMAS MERTON', ''],
+      ['', 'LOVE IS OUR', 'TRUE DESTINY', 'WE FIND', 'THE MEANING', 'OF LIFE', '', '- THOMAS MERTON'],
+      ['', 'IF THE ONLY', 'PRAYER YOU', 'EVER SAY IS', 'THANK YOU', 'THAT IS', 'ENOUGH', '- MEISTER E'],
+      ['', 'THE SOUL IS', 'NOT IN THE', 'BODY BUT', 'THE BODY IS', 'IN THE SOUL', '', '- MEISTER E'],
+      ['', 'YOU DONT', 'NEED TO KNOW', 'PRECISELY', 'WHAT IS', 'HAPPENING', '', '- THOMAS MERTON'],
+      ['', 'BE PATIENT', 'WITH ALL', 'THAT IS', 'UNRESOLVED', 'IN YOUR HEART', '', '- RILKE'],
+      ['', 'WHAT MAKES', 'THE DESERT', 'BEAUTIFUL IS', 'THAT IT HIDES', 'A WELL', '', '- SAINT EXUPERY'],
+      ['', 'THE WOUND IS', 'WHERE THE', 'LIGHT ENTERS', '', '', '- RUMI', ''],
+    ]
+  },
 };
 
 export const THEME_KEYS = Object.keys(THEMES);
