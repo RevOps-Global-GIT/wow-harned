@@ -1,3 +1,5 @@
+import { CROWD_MURMUR_BASE64 } from './crowdAudio.js';
+
 const STORAGE_KEY = 'flipoff_ambient';
 const AMBIENT_VOL_KEY = 'flipoff_ambient_vol';
 const MURMUR_KEY = 'flipoff_murmur';
@@ -370,9 +372,7 @@ export class AmbientEngine {
     return source;
   }
 
-  // --- Crowd murmur synthesis ---
-  // Multiple filtered noise voices in vocal formant ranges
-  // with slow LFO modulation to create the rise/fall of conversation
+  // --- Crowd murmur — real coffee shop recording, looped ---
 
   _startMurmur() {
     const ctx = this.soundEngine.ctx;
@@ -382,113 +382,31 @@ export class AmbientEngine {
     this._murmurGain.gain.value = 0;
     this._murmurGain.connect(this._masterGain);
 
-    // Fade in
+    // Fade in over 2 seconds
     this._murmurGain.gain.linearRampToValueAtTime(this.murmurVolume, ctx.currentTime + 2);
 
-    // Reverb for the murmur (separate, longer tail for spaciousness)
-    const murmurReverb = this._createMurmurReverb(ctx);
-    murmurReverb.connect(this._murmurGain);
-
-    // Create 6 "voice groups" at different formant frequencies
-    // Each is bandpass-filtered noise with LFO amplitude modulation
-    const voiceConfigs = [
-      // Lower male-ish voices
-      { freq: 280, Q: 1.5, lfoRate: 0.08, lfoDepth: 0.6, gain: 0.45 },
-      { freq: 350, Q: 1.2, lfoRate: 0.12, lfoDepth: 0.5, gain: 0.38 },
-      // Mid voices
-      { freq: 500, Q: 1.8, lfoRate: 0.06, lfoDepth: 0.7, gain: 0.30 },
-      { freq: 800, Q: 1.0, lfoRate: 0.15, lfoDepth: 0.4, gain: 0.25 },
-      // Higher female-ish voices
-      { freq: 1200, Q: 2.0, lfoRate: 0.10, lfoDepth: 0.6, gain: 0.18 },
-      { freq: 2200, Q: 1.5, lfoRate: 0.09, lfoDepth: 0.5, gain: 0.10 },
-    ];
-
-    voiceConfigs.forEach(vc => {
-      // Noise source
-      const bufferSize = ctx.sampleRate * 6;
-      const buffer = ctx.createBuffer(2, bufferSize, ctx.sampleRate);
-      for (let ch = 0; ch < 2; ch++) {
-        const data = buffer.getChannelData(ch);
-        let last = 0;
-        for (let i = 0; i < bufferSize; i++) {
-          // Pink-ish noise (between white and brown)
-          const white = Math.random() * 2 - 1;
-          data[i] = (last + 0.1 * white) / 1.1;
-          last = data[i];
-          data[i] *= 5;
-        }
+    // Decode and loop the real crowd recording
+    try {
+      const binaryStr = atob(CROWD_MURMUR_BASE64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
       }
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-      // Slight playback rate variation so voices don't phase-lock
-      source.playbackRate.value = 0.95 + Math.random() * 0.1;
+      ctx.decodeAudioData(bytes.buffer.slice(0))
+        .then(buffer => {
+          if (!this._murmurGain) return; // stopped before decode finished
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.loop = true;
 
-      // Bandpass at vocal formant
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass';
-      bp.frequency.value = vc.freq;
-      bp.Q.value = vc.Q;
-
-      // Second formant filter for more vowel-like character
-      const bp2 = ctx.createBiquadFilter();
-      bp2.type = 'bandpass';
-      bp2.frequency.value = vc.freq * (1.5 + Math.random() * 0.5);
-      bp2.Q.value = vc.Q * 0.7;
-
-      // LFO for amplitude modulation (conversation cadence)
-      const lfo = ctx.createOscillator();
-      lfo.type = 'sine';
-      lfo.frequency.value = vc.lfoRate + (Math.random() * 0.04 - 0.02);
-
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = vc.lfoDepth * vc.gain;
-
-      const voiceGain = ctx.createGain();
-      voiceGain.gain.value = vc.gain;
-
-      // Wire LFO to modulate voice volume
-      lfo.connect(lfoGain);
-      lfoGain.connect(voiceGain.gain);
-
-      // Signal chain: source -> bp -> bp2 -> voiceGain -> reverb
-      source.connect(bp);
-      bp.connect(bp2);
-      bp2.connect(voiceGain);
-      voiceGain.connect(murmurReverb);
-
-      source.start();
-      lfo.start();
-
-      this._murmurSources.push(source, lfo);
-    });
-
-    // Extra layer: very faint sibilance (the "ss" and "sh" sounds in speech)
-    const sibSource = this._createWhiteNoise(ctx);
-    const sibFilter = ctx.createBiquadFilter();
-    sibFilter.type = 'bandpass';
-    sibFilter.frequency.value = 5500;
-    sibFilter.Q.value = 0.8;
-
-    const sibLfo = ctx.createOscillator();
-    sibLfo.type = 'sine';
-    sibLfo.frequency.value = 0.3;
-
-    const sibLfoGain = ctx.createGain();
-    sibLfoGain.gain.value = 0.02;
-
-    const sibGain = ctx.createGain();
-    sibGain.gain.value = 0.02;
-
-    sibLfo.connect(sibLfoGain);
-    sibLfoGain.connect(sibGain.gain);
-
-    sibSource.connect(sibFilter);
-    sibFilter.connect(sibGain);
-    sibGain.connect(this._murmurGain);
-
-    sibLfo.start();
-    this._murmurSources.push(sibSource, sibLfo);
+          source.connect(this._murmurGain);
+          source.start();
+          this._murmurSources.push(source);
+        })
+        .catch(e => console.warn('Murmur decode failed:', e));
+    } catch (e) {
+      console.warn('Murmur init failed:', e);
+    }
   }
 
   _stopMurmur() {
@@ -506,18 +424,6 @@ export class AmbientEngine {
     }
   }
 
-  _createMurmurReverb(ctx) {
-    // Longer, more diffuse reverb for crowd sound
-    const length = ctx.sampleRate * 4.5;
-    const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
-    for (let ch = 0; ch < 2; ch++) {
-      const data = impulse.getChannelData(ch);
-      for (let i = 0; i < length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 1.8);
-      }
-    }
-    const convolver = ctx.createConvolver();
-    convolver.buffer = impulse;
-    return convolver;
+  // Murmur reverb removed — using real recording now
   }
 }

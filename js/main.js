@@ -29,15 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const settings = new SettingsPanel(rotator, ambientEngine);
   const keyboard = new KeyboardController(rotator, soundEngine, settings, ambientEngine);
 
-  // DEBUG banner
-  const dbg = document.createElement('div');
-  dbg.id = 'audio-debug';
-  dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:#fff;font:12px monospace;padding:6px 10px;z-index:99999;text-align:center;';
-  dbg.textContent = 'AUDIO: waiting for tap...';
-  document.body.appendChild(dbg);
-
   // Poll for audio unlock from inline <script> in HTML
-  // The inline script creates AudioContext on first touch via capture-phase listeners
   let audioInitialized = false;
   const pollForAudio = setInterval(() => {
     if (window.__audioReady && !audioInitialized) {
@@ -49,14 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ambientEngine.enabled) {
         setTimeout(() => ambientEngine.start(), 500);
       }
-
-      setTimeout(() => {
-        const d = document.getElementById('audio-debug');
-        if (d) {
-          d.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'pending'}, muted=${soundEngine.muted}`;
-          setTimeout(() => { d.style.display = 'none'; }, 4000);
-        }
-      }, 1000);
     }
   }, 100);
 

@@ -48,29 +48,6 @@ export class Board {
     this.rightBar = this._createAccentBar('accent-bar-right');
     this.boardEl.appendChild(this.rightBar);
 
-    // Keyboard hint icon (bottom-left)
-    const hint = document.createElement('div');
-    hint.className = 'keyboard-hint';
-    hint.textContent = '?';
-    hint.title = 'Keyboard shortcuts';
-    hint.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const overlay = this.boardEl.querySelector('.shortcuts-overlay');
-      if (overlay) overlay.classList.toggle('visible');
-    });
-    this.boardEl.appendChild(hint);
-
-    // Shortcuts overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'shortcuts-overlay';
-    overlay.innerHTML = `
-      <div><span>Next message</span><kbd>Enter</kbd></div>
-      <div><span>Previous</span><kbd>\u2190</kbd></div>
-      <div><span>Fullscreen</span><kbd>F</kbd></div>
-      <div><span>Mute</span><kbd>M</kbd></div>
-    `;
-    this.boardEl.appendChild(overlay);
-
     containerEl.appendChild(this.boardEl);
     this._updateAccentColors();
   }

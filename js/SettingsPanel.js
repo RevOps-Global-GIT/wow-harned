@@ -499,6 +499,33 @@ export class SettingsPanel {
     modeSection.appendChild(modes);
     this.bodyEl.appendChild(modeSection);
 
+    // -- Click Sound toggle --
+    const clickSection = document.createElement('div');
+    clickSection.className = 'sp-section';
+    clickSection.innerHTML = `<div class="sp-label">Sound</div>`;
+
+    const clickRow = document.createElement('div');
+    clickRow.className = 'sp-ambient-row';
+
+    const clickOn = this.rotator.board.soundEngine && !this.rotator.board.soundEngine.muted;
+    const clickToggle = document.createElement('button');
+    clickToggle.className = `sp-ambient-toggle${clickOn ? ' active' : ''}`;
+    clickToggle.innerHTML = `
+      <span class="sp-ambient-icon">${clickOn ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'}</span>
+      <span class="sp-ambient-label">${clickOn ? 'Flap Click' : 'Flap Click Off'}</span>
+      <span class="sp-ambient-key">M</span>
+    `;
+    clickToggle.addEventListener('click', () => {
+      if (this.rotator.board.soundEngine) {
+        this.rotator.board.soundEngine.toggleMute();
+        this._render();
+      }
+    });
+
+    clickRow.appendChild(clickToggle);
+    clickSection.appendChild(clickRow);
+    this.bodyEl.appendChild(clickSection);
+
     // -- Ambient toggle --
     const ambientSection = document.createElement('div');
     ambientSection.className = 'sp-section';
