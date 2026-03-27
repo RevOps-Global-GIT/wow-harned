@@ -1,5 +1,6 @@
 import { MESSAGES, GRID_ROWS, GRID_COLS } from './constants.js';
 import { THEMES, THEME_KEYS, DEFAULT_THEME_KEYS } from './themes.js';
+import { shareMessage } from './sharedMessages.js';
 
 const STORAGE_KEY = 'flipoff_messages';
 
@@ -218,6 +219,15 @@ export class SettingsPanel {
         border-radius: 4px;
       }
       .sp-msg-del:hover { color: #ff4444; background: rgba(255,68,68,0.1); }
+      .sp-msg-share {
+        background: none;
+        color: rgba(255,255,255,0.2);
+        font-size: 11px;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .sp-msg-share:hover { color: #00aaff; background: rgba(0,170,255,0.1); }
       .sp-msg textarea {
         width: 100%;
         background: rgba(0,0,0,0.3);
@@ -702,8 +712,28 @@ export class SettingsPanel {
         this._render();
       });
 
+      const share = document.createElement('button');
+      share.className = 'sp-msg-share';
+      share.textContent = 'Share';
+      share.addEventListener('click', async () => {
+        const name = prompt('Your name (so family knows who shared it):');
+        if (!name) return;
+        share.textContent = 'Sharing...';
+        const ok = await shareMessage(this.messages[i], name);
+        share.textContent = ok ? 'Shared!' : 'Failed';
+        if (ok) {
+          // Reload shared messages into rotator
+          this.rotator._loadShared();
+          setTimeout(() => { share.textContent = 'Share'; }, 2000);
+        }
+      });
+
       header.appendChild(num);
-      if (this.messages.length > 1) header.appendChild(del);
+      const btnGroup = document.createElement('div');
+      btnGroup.style.cssText = 'display:flex;gap:6px;';
+      btnGroup.appendChild(share);
+      if (this.messages.length > 1) btnGroup.appendChild(del);
+      header.appendChild(btnGroup);
 
       const textarea = document.createElement('textarea');
       textarea.rows = GRID_ROWS;

@@ -19,23 +19,46 @@
 
 /* Mobile — shared rules */
 @media (max-width: 600px) {
-  .accent-bar {
-    display: none;
-  }
-
   .keyboard-hint {
     display: none;
   }
 }
 
-/* Mobile portrait */
+/* Mobile portrait — accent bars move to top/bottom */
 @media (max-width: 600px) and (orientation: portrait) {
   .tap-hint {
     display: none;
   }
+
+  .accent-bar {
+    flex-direction: row;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+    right: auto;
+    gap: 6px;
+  }
+
+  .accent-bar-left {
+    top: 8px;
+    left: 50%;
+  }
+
+  .accent-bar-right {
+    bottom: 8px;
+    top: auto;
+    right: auto;
+    left: 50%;
+  }
+
+  .accent-segment {
+    width: 10px;
+    height: 10px;
+  }
 }
 
-/* Landscape mobile (phone turned sideways for TV casting) */
+/* Landscape mobile — hide accents (too cramped) */
 @media (max-height: 500px) {
   .board {
     padding: 4px 8px 8px;

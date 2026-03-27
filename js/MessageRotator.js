@@ -1,6 +1,7 @@
 import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, GRID_COLS } from './constants.js';
 import { THEMES, THEME_KEYS, DEFAULT_THEME_KEYS } from './themes.js';
 import { reflowMessage } from './reflow.js';
+import { fetchSharedMessages } from './sharedMessages.js';
 
 const MODE_KEY = 'flipoff_mode';
 const THEMES_KEY = 'flipoff_enabled_themes';
@@ -10,9 +11,13 @@ export class MessageRotator {
   constructor(board) {
     this.board = board;
     this.messages = MESSAGES; // custom messages (set by SettingsPanel)
+    this.sharedMessages = []; // shared by family via Supabase
     this.currentIndex = -1;
     this._timer = null;
     this._paused = false;
+
+    // Load shared messages from Supabase
+    this._loadShared();
     this._queue = [];
 
     // Load mode: 'themes', 'custom', 'combined'
@@ -58,6 +63,12 @@ export class MessageRotator {
     this._queue = [];
   }
 
+  async _loadShared() {
+    const shared = await fetchSharedMessages();
+    this.sharedMessages = shared.map(s => s.lines);
+    this._queue = []; // reset queue to include new shared messages
+  }
+
   _getPool() {
     const themeMessages = [];
     if (this.mode === 'themes' || this.mode === 'combined') {
@@ -73,7 +84,10 @@ export class MessageRotator {
       customMessages.push(...this.messages);
     }
 
-    const pool = [...themeMessages, ...customMessages];
+    // Always include shared messages from family
+    const shared = [...this.sharedMessages];
+
+    const pool = [...themeMessages, ...customMessages, ...shared];
     return pool.length > 0 ? pool : MESSAGES;
   }
 
