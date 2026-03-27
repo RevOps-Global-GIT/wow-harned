@@ -1,5 +1,6 @@
-import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION } from './constants.js';
+import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, GRID_COLS } from './constants.js';
 import { THEMES, THEME_KEYS, DEFAULT_THEME_KEYS } from './themes.js';
+import { reflowMessage } from './reflow.js';
 
 const MODE_KEY = 'flipoff_mode';
 const THEMES_KEY = 'flipoff_enabled_themes';
@@ -85,11 +86,17 @@ export class MessageRotator {
     return a;
   }
 
+  _reflow(msg) {
+    // Only reflow if grid differs from the default 16-col format
+    if (this.board.cols >= GRID_COLS) return msg;
+    return reflowMessage(msg, this.board.cols, this.board.rows);
+  }
+
   _nextMessage() {
     if (this._queue.length === 0) {
       this._queue = this._shuffle(this._getPool());
     }
-    return this._queue.pop();
+    return this._reflow(this._queue.pop());
   }
 
   start() {

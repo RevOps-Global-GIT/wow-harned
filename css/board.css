@@ -16,7 +16,7 @@
 .tile-grid {
   display: grid;
   grid-template-columns: repeat(var(--grid-cols, 22), var(--tile-size));
-  grid-template-rows: repeat(var(--grid-rows, 5), var(--tile-size));
+  grid-template-rows: repeat(var(--grid-rows, 5), var(--tile-h, var(--tile-size)));
   gap: var(--tile-gap);
   justify-content: center;
 }

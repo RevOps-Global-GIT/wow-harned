@@ -4,12 +4,26 @@ import { AmbientEngine } from './AmbientEngine.js';
 import { MessageRotator } from './MessageRotator.js';
 import { KeyboardController } from './KeyboardController.js';
 import { SettingsPanel } from './SettingsPanel.js';
+import { GRID_COLS, GRID_ROWS } from './constants.js';
+
+// Portrait mobile: fewer cols, more rows for a tall split-flap look
+const PORTRAIT_COLS = 12;
+const PORTRAIT_ROWS = 12;
+
+function isMobilePortrait() {
+  return window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const boardContainer = document.getElementById('board-container');
   const tapHint = document.getElementById('tap-hint');
   const soundEngine = new SoundEngine();
-  const board = new Board(boardContainer, soundEngine);
+
+  const portrait = isMobilePortrait();
+  const cols = portrait ? PORTRAIT_COLS : GRID_COLS;
+  const rows = portrait ? PORTRAIT_ROWS : GRID_ROWS;
+
+  const board = new Board(boardContainer, soundEngine, cols, rows);
   const rotator = new MessageRotator(board);
   const ambientEngine = new AmbientEngine(soundEngine);
   const settings = new SettingsPanel(rotator, ambientEngine);
@@ -39,17 +53,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const resizeTiles = () => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const cols = board.cols;
-    const rows = board.rows;
-    const gap = 4;
-    const tileByWidth = (vw - (cols + 1) * gap) / cols;
-    const tileByHeight = (vh - (rows + 1) * gap) / rows;
-    const tileSize = Math.floor(Math.min(tileByWidth, tileByHeight));
-    board.boardEl.style.setProperty('--tile-size', tileSize + 'px');
-    board.boardEl.style.setProperty('--tile-gap', Math.max(2, Math.floor(tileSize * 0.06)) + 'px');
+    const c = board.cols;
+    const r = board.rows;
+
+    if (isMobilePortrait()) {
+      // Portrait: width-constrained tiles with taller aspect ratio
+      const gap = 2;
+      const tileW = Math.floor((vw - (c + 1) * gap) / c);
+      // Height: fill ~80% of viewport
+      const targetH = vh * 0.82;
+      const tileH = Math.floor((targetH - (r + 1) * gap) / r);
+      board.boardEl.style.setProperty('--tile-size', tileW + 'px');
+      board.boardEl.style.setProperty('--tile-h', tileH + 'px');
+      board.boardEl.style.setProperty('--tile-gap', gap + 'px');
+      board.boardEl.classList.add('portrait-mode');
+    } else {
+      // Landscape / desktop: square tiles, fit both dimensions
+      const gap = 4;
+      const tileByWidth = (vw - (c + 1) * gap) / c;
+      const tileByHeight = (vh - (r + 1) * gap) / r;
+      const tileSize = Math.floor(Math.min(tileByWidth, tileByHeight));
+      board.boardEl.style.setProperty('--tile-size', tileSize + 'px');
+      board.boardEl.style.setProperty('--tile-h', tileSize + 'px');
+      board.boardEl.style.setProperty('--tile-gap', Math.max(2, Math.floor(tileSize * 0.06)) + 'px');
+      board.boardEl.classList.remove('portrait-mode');
+    }
   };
   resizeTiles();
   window.addEventListener('resize', resizeTiles);
+
+  // Reload on orientation change to rebuild grid
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => location.reload(), 300);
+  });
 
   // Start message rotation
   rotator.start();
@@ -67,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mousemove', showCursor);
 
   // iOS "Add to Home Screen" banner
-  // Only show on iOS Safari when NOT already running as standalone PWA
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.navigator.standalone === true ||

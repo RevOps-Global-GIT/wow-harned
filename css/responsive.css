@@ -1,7 +1,6 @@
 /* Large screens / 4K TVs */
 @media (min-width: 2000px) {
   .board {
-    --tile-gap: 5px;
     padding: 16px 20px 20px;
   }
 }
@@ -29,48 +28,10 @@
   }
 }
 
-/* Mobile portrait — proportional tiles, centered */
+/* Mobile portrait */
 @media (max-width: 600px) and (orientation: portrait) {
-  .board {
-    --tile-gap: 1px !important;
-    --tile-w: calc((100vw - 19px) / 16);
-    width: 100% !important;
-    height: auto !important;
-    padding: 0 2px !important;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .tile-grid {
-    grid-template-columns: repeat(var(--grid-cols, 16), var(--tile-w)) !important;
-    grid-template-rows: repeat(var(--grid-rows, 8), calc(var(--tile-w) * 1.4)) !important;
-    gap: 1px !important;
-    width: auto !important;
-    height: auto !important;
-  }
-
-  .tile {
-    width: var(--tile-w) !important;
-    height: calc(var(--tile-w) * 1.4) !important;
-    perspective: 200px;
-  }
-
-  .tile-inner {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  .tile-front,
-  .tile-back {
-    inset: 0;
-  }
-
-  .tile-front span,
-  .tile-back span {
-    font-size: clamp(11px, 3.4vw, 20px) !important;
+  .tap-hint {
+    display: none;
   }
 }
 
