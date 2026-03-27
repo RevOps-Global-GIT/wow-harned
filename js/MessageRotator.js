@@ -6,6 +6,7 @@ import { fetchSharedMessages } from './sharedMessages.js';
 const MODE_KEY = 'flipoff_mode';
 const THEMES_KEY = 'flipoff_enabled_themes';
 const SPEED_KEY = 'flipoff_speed';
+const SHARED_KEY = 'flipoff_show_shared';
 
 export class MessageRotator {
   constructor(board) {
@@ -15,6 +16,12 @@ export class MessageRotator {
     this.currentIndex = -1;
     this._timer = null;
     this._paused = false;
+
+    // Shared messages toggle (default on)
+    try {
+      const sv = localStorage.getItem(SHARED_KEY);
+      this.showShared = sv === null ? true : sv === 'true';
+    } catch { this.showShared = true; }
 
     // Load shared messages from Supabase
     this._loadShared();
@@ -45,6 +52,12 @@ export class MessageRotator {
     localStorage.setItem(MODE_KEY, mode);
     this._queue = [];
     this.currentIndex = -1;
+  }
+
+  setShowShared(val) {
+    this.showShared = val;
+    localStorage.setItem(SHARED_KEY, String(val));
+    this._queue = [];
   }
 
   setSpeed(multiplier) {
@@ -84,8 +97,8 @@ export class MessageRotator {
       customMessages.push(...this.messages);
     }
 
-    // Always include shared messages from family
-    const shared = [...this.sharedMessages];
+    // Include shared messages from family if enabled
+    const shared = this.showShared ? [...this.sharedMessages] : [];
 
     const pool = [...themeMessages, ...customMessages, ...shared];
     return pool.length > 0 ? pool : MESSAGES;

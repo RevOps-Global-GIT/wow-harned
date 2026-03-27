@@ -509,6 +509,39 @@ export class SettingsPanel {
     modeSection.appendChild(modes);
     this.bodyEl.appendChild(modeSection);
 
+    // -- Family Shared toggle --
+    const sharedSection = document.createElement('div');
+    sharedSection.className = 'sp-section';
+    sharedSection.innerHTML = `<div class="sp-label">Family Shared</div>`;
+
+    const sharedRow = document.createElement('div');
+    sharedRow.className = 'sp-ambient-row';
+
+    const sharedOn = this.rotator.showShared;
+    const sharedToggle = document.createElement('button');
+    sharedToggle.className = `sp-ambient-toggle${sharedOn ? ' active' : ''}`;
+    sharedToggle.innerHTML = `
+      <span class="sp-ambient-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="sp-ambient-label">${sharedOn ? 'Show Family Quotes' : 'Family Quotes Off'}</span>
+    `;
+    sharedToggle.addEventListener('click', () => {
+      this.rotator.setShowShared(!this.rotator.showShared);
+      this._render();
+    });
+
+    sharedRow.appendChild(sharedToggle);
+    sharedSection.appendChild(sharedRow);
+
+    // Shared count
+    if (this.rotator.sharedMessages.length > 0) {
+      const count = document.createElement('div');
+      count.style.cssText = 'color:rgba(255,255,255,0.2);font-size:11px;margin-top:6px;';
+      count.textContent = `${this.rotator.sharedMessages.length} shared by family`;
+      sharedSection.appendChild(count);
+    }
+
+    this.bodyEl.appendChild(sharedSection);
+
     // -- Click Sound toggle --
     const clickSection = document.createElement('div');
     clickSection.className = 'sp-section';
