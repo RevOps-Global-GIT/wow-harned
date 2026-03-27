@@ -1,11 +1,11 @@
 {
-  "name": "FlipOff.",
-  "short_name": "FlipOff",
+  "name": "Words of Wisdom",
+  "short_name": "WoW",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
-  "orientation": "landscape",
+  "orientation": "any",
   "icons": [
     {
       "src": "icon-192.png",

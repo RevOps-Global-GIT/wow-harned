@@ -18,7 +18,7 @@
   }
 }
 
-/* Mobile */
+/* Mobile — shared rules */
 @media (max-width: 600px) {
   .board {
     --tile-gap: 2px;
@@ -31,6 +31,28 @@
 
   .keyboard-hint {
     display: none;
+  }
+}
+
+/* Mobile portrait — immersive full-screen */
+@media (max-width: 600px) and (orientation: portrait) {
+  .board {
+    --tile-size: calc((100vw - 17px) / 16);
+    --tile-gap: 1px;
+    padding: 0 1px;
+  }
+
+  .tile-grid {
+    grid-template-rows: repeat(var(--grid-rows, 8), calc((70dvh - 9px) / 8));
+  }
+
+  .tile {
+    height: calc((70dvh - 9px) / 8);
+  }
+
+  .tile-front span,
+  .tile-back span {
+    font-size: calc(var(--tile-size) * 0.68);
   }
 }
 
