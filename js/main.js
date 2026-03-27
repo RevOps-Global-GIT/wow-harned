@@ -7,8 +7,9 @@ import { SettingsPanel } from './SettingsPanel.js';
 import { GRID_COLS, GRID_ROWS } from './constants.js';
 
 // Portrait mobile: fewer cols = bigger tiles/text, more rows = fills screen
-const PORTRAIT_COLS = 10;
-const PORTRAIT_ROWS = 16;
+// 12 cols handles words up to 12 chars (covers almost all English words)
+const PORTRAIT_COLS = 12;
+const PORTRAIT_ROWS = 14;
 
 function isMobilePortrait() {
   return window.innerWidth <= 600 && window.innerHeight > window.innerWidth;

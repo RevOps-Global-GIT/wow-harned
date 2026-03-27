@@ -5,7 +5,7 @@ export const THEMES = {
     label: 'Eastern',
     messages: [
       ['', 'THE WAY THAT', 'CAN BE TOLD', 'IS NOT THE', 'ETERNAL WAY', '', '- LAO TZU', ''],
-      ['', 'BEFORE', 'ENLIGHTENMENT', 'CHOP WOOD', 'CARRY WATER', '', '- ZEN', ''],
+      ['', 'BEFORE YOU', 'AWAKEN', 'CHOP WOOD', 'CARRY WATER', '', '- ZEN', ''],
       ['', 'THE MIND IS', 'EVERYTHING .', 'WHAT YOU THINK', 'YOU BECOME', '', '- BUDDHA', ''],
       ['', 'WHEN YOU', 'REALIZE NOTHING', 'IS LACKING', 'THE WHOLE WORLD', 'BELONGS TO YOU', '', '- LAO TZU'],
       ['', 'NO SNOWFLAKE', 'EVER FALLS IN', 'THE WRONG', 'PLACE', '', '- ZEN PROVERB', ''],
@@ -17,7 +17,7 @@ export const THEMES = {
       ['', 'WHEN THE', 'STUDENT IS', 'READY THE', 'TEACHER WILL', 'APPEAR', '', '- LAO TZU'],
       ['', 'MUDDY WATER', 'IS BEST', 'CLEARED BY', 'LEAVING IT', 'ALONE', '', '- ALAN WATTS'],
       ['', 'BE LIKE WATER', 'MAKING ITS', 'WAY THROUGH', 'CRACKS', '', '- BRUCE LEE', ''],
-      ['', 'IN THE', 'BEGINNERS MIND', 'THERE ARE MANY', 'POSSIBILITIES', '', '- SUZUKI', ''],
+      ['', 'IN THE', 'BEGINNERS MIND', 'THERE ARE MANY', 'PATHS FORWARD', '', '- SUZUKI', ''],
       ['', 'PEACE COMES', 'FROM WITHIN .', 'DO NOT SEEK', 'IT WITHOUT', '', '- BUDDHA', ''],
       ['', 'THE FLAME THAT', 'BURNS TWICE', 'AS BRIGHT', 'BURNS HALF', 'AS LONG', '', '- LAO TZU'],
       ['', 'A THOUSAND', 'MILE JOURNEY', 'BEGINS WITH', 'A SINGLE STEP', '', '- LAO TZU', ''],
@@ -144,7 +144,7 @@ export const THEMES = {
       ['', 'MUSIC WASHES', 'AWAY FROM THE', 'SOUL THE DUST', 'OF EVERYDAY', 'LIFE', '', '- GEORGE SAND'],
       ['', 'WHERE WORDS', 'LEAVE OFF', 'MUSIC BEGINS', '', '- HEINE', '', ''],
       ['', 'ONE GOOD', 'THING ABOUT', 'MUSIC . WHEN', 'IT HITS YOU', 'FEEL NO PAIN', '', '- BOB MARLEY'],
-      ['', 'AFTER', 'SILENCE THAT', 'WHICH COMES', 'NEAREST TO', 'THE', 'INEXPRESSIBLE', '- ALDOUS H'],
+      ['', 'AFTER SILENCE', 'THAT WHICH', 'COMES NEAREST', 'TO EXPRESSING', 'THE UNSAYABLE', '', '- ALDOUS H'],
       ['', 'MUSIC IS', 'MOONLIGHT IN', 'THE GLOOMY', 'NIGHT OF LIFE', '', '- JEAN PAUL', ''],
     ]
   },
