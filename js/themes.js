@@ -210,11 +210,11 @@ export const THEMES = {
       ['', 'AN APPLE A DAY', 'KEEPS THE', 'UH ...', 'SOMEONE AWAY', '', '- FRED HARNED', ''],
 
       // Serina on brothers
-      ['', 'HAVING A', 'BROTHER IS', 'LIKE HAVING A', 'ROOMMATE YOU', 'CANT EVICT', '', '- SERINA H'],
-      ['', 'I SURVIVED', 'GROWING UP', 'WITH GREG AND', 'ZACH HARNED', 'ASK ME HOW', '', '- SERINA H'],
+      ['', 'HAVING A', 'BROTHER IS', 'LIKE HAVING A', 'ROOMMATE YOU', 'CANT EVICT', '', '- SERINA', 'HARNED'],
+      ['', 'I SURVIVED', 'GROWING UP', 'WITH GREG AND', 'ZACH HARNED', 'ASK ME HOW', '', '- SERINA', 'HARNED'],
 
       // Tiffany
-      ['', 'BEHIND EVERY', 'GREAT MAN', 'IS A WIFE', 'TELLING HIM', 'HES WRONG', '', '- TIFFANY H'],
+      ['', 'BEHIND EVERY', 'GREAT MAN', 'IS A WIFE', 'TELLING HIM', 'HES WRONG', '', '- TIFFANY', 'HARNED'],
 
       // Amy
       ['', 'A MOTHERS WORK', 'IS NEVER DONE', 'ESPECIALLY', 'WITH THE', 'HARNED BOYS', '', '- AMY HARNED'],
