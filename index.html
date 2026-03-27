@@ -108,8 +108,8 @@
     }
   </style>
 </head>
-<body>
-  <div class="board-wrap" id="board-container"></div>
+<body onclick="window.__userTapped=true">
+  <div class="board-wrap" id="board-container" onclick="window.__userTapped=true" ontouchend="window.__userTapped=true"></div>
   <div class="tap-hint" id="tap-hint">double-tap for settings</div>
   <script type="module" src="js/main.js"></script>
 </body>

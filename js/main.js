@@ -36,51 +36,48 @@ document.addEventListener('DOMContentLoaded', () => {
   dbg.textContent = 'AUDIO: waiting for tap...';
   document.body.appendChild(dbg);
 
-  // Initialize audio on first user interaction
+  // Audio init — uses both event listeners AND polling for inline handlers
   let audioInitialized = false;
-  const initAudio = (e) => {
+  const doInit = (source) => {
     if (audioInitialized) return;
     audioInitialized = true;
 
-    dbg.textContent = `AUDIO: init fired via ${e.type}`;
+    dbg.textContent = `AUDIO: init via ${source}`;
     dbg.style.background = 'rgba(255,165,0,0.9)';
 
     try {
       soundEngine.init();
-      dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? 'yes' : 'pending'}`;
       dbg.style.background = 'rgba(0,128,0,0.9)';
-
-      // Check buffer decode status after a delay
       setTimeout(() => {
-        dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'NULL'}, muted=${soundEngine.muted}`;
+        dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'pending'}, muted=${soundEngine.muted}`;
       }, 1000);
-
-      // Hide debug after 5 seconds
       setTimeout(() => { dbg.style.display = 'none'; }, 5000);
     } catch (err) {
       dbg.textContent = `AUDIO ERROR: ${err.message}`;
     }
 
     if (tapHint) tapHint.classList.add('hidden');
-
     if (ambientEngine.enabled) {
       setTimeout(() => ambientEngine.start(), 500);
     }
-
-    document.removeEventListener('click', initAudio);
-    document.body.removeEventListener('click', initAudio);
-    document.body.removeEventListener('touchend', initAudio);
-    boardContainer.removeEventListener('click', initAudio);
-    boardContainer.removeEventListener('touchend', initAudio);
-    document.removeEventListener('keydown', initAudio);
   };
-  // Listen on multiple targets — iOS may not bubble to document
-  document.addEventListener('click', initAudio);
-  document.body.addEventListener('click', initAudio);
-  document.body.addEventListener('touchend', initAudio);
-  boardContainer.addEventListener('click', initAudio);
-  boardContainer.addEventListener('touchend', initAudio);
-  document.addEventListener('keydown', initAudio);
+
+  // Method 1: standard event listeners
+  const initFromEvent = (e) => doInit(e.type);
+  document.addEventListener('click', initFromEvent);
+  document.body.addEventListener('click', initFromEvent);
+  document.body.addEventListener('touchend', initFromEvent);
+  boardContainer.addEventListener('click', initFromEvent);
+  boardContainer.addEventListener('touchend', initFromEvent);
+  document.addEventListener('keydown', initFromEvent);
+
+  // Method 2: poll for inline onclick flag (fallback for iOS)
+  const pollForTap = setInterval(() => {
+    if (window.__userTapped) {
+      clearInterval(pollForTap);
+      doInit('inline-poll');
+    }
+  }, 200);
 
   // Dynamic tile sizing: fill the viewport
   const resizeTiles = () => {
