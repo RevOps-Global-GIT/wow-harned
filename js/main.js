@@ -64,8 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Larger font for portrait — use 55% of tile width
       board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
+    } else if (vw <= 900 && vh < vw) {
+      // Mobile landscape: wider tiles, use more horizontal space
+      const gap = 2;
+      const tileW = Math.floor((vw * 0.95 - (c + 1) * gap) / c);
+      const tileH = Math.floor((vh * 0.9 - (r + 1) * gap) / r);
+      const tileSize = Math.min(tileW, tileH);
+      board.boardEl.style.setProperty('--tile-size', tileSize + 'px');
+      board.boardEl.style.setProperty('--tile-h', tileSize + 'px');
+      board.boardEl.style.setProperty('--tile-gap', gap + 'px');
+      board.boardEl.classList.remove('portrait-mode');
     } else {
-      // Landscape / desktop: square tiles, fit both dimensions
+      // Desktop: square tiles, fit both dimensions
       const gap = 4;
       const tileByWidth = (vw - (c + 1) * gap) / c;
       const tileByHeight = (vh - (r + 1) * gap) / r;
@@ -133,6 +143,40 @@ document.addEventListener('DOMContentLoaded', () => {
       ripple.style.opacity = '0';
     });
     setTimeout(() => ripple.remove(), 500);
+  });
+
+  // Double-tap to favorite a quote
+  let lastClickTime = 0;
+  document.addEventListener('click', (e) => {
+    if (settings.visible) return;
+    const now = Date.now();
+    if (now - lastClickTime < 400) {
+      // Double-tap detected
+      const isFav = rotator.toggleFavorite();
+      // Show heart toast
+      const heart = document.createElement('div');
+      heart.style.cssText = `
+        position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0);
+        font-size:60px;z-index:9999;pointer-events:none;
+        transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;
+        color:${isFav ? '#ff4466' : 'rgba(255,255,255,0.3)'};
+        text-shadow:0 2px 20px rgba(0,0,0,0.5);
+        font-family:-apple-system,sans-serif;
+      `;
+      heart.textContent = isFav ? '\u2665' : '\u2661';
+      document.body.appendChild(heart);
+      requestAnimationFrame(() => {
+        heart.style.transform = 'translate(-50%,-50%) scale(1)';
+      });
+      setTimeout(() => {
+        heart.style.opacity = '0';
+        heart.style.transform = 'translate(-50%,-50%) scale(1.3)';
+      }, 600);
+      setTimeout(() => heart.remove(), 1000);
+      lastClickTime = 0; // reset to prevent triple-tap
+    } else {
+      lastClickTime = now;
+    }
   });
 
   // Hide cursor after 3s of no movement (but not when settings open)

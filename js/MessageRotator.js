@@ -128,14 +128,16 @@ export class MessageRotator {
 
   _getGreeting() {
     const hour = new Date().getHours();
-    let greeting;
-    if (hour < 12) greeting = 'GOOD MORNING';
-    else if (hour < 17) greeting = 'GOOD AFTERNOON';
-    else greeting = 'GOOD EVENING';
+    let word;
+    if (hour < 12) word = 'MORNING';
+    else if (hour < 17) word = 'AFTERNOON';
+    else word = 'EVENING';
 
     const rows = this.board.rows;
+    const mid = Math.floor(rows / 2);
     const lines = Array(rows).fill('');
-    lines[Math.floor(rows / 2) - 1] = greeting;
+    lines[mid - 1] = 'GOOD';
+    lines[mid] = word;
     return lines;
   }
 
@@ -172,15 +174,50 @@ export class MessageRotator {
 
   next() {
     const msg = this._nextMessage();
+    this._currentMsg = msg;
     this.board.displayMessage(msg);
     this._resetAutoRotation();
   }
 
   prev() {
-    // For prev, just show another random one
     const msg = this._nextMessage();
+    this._currentMsg = msg;
     this.board.displayMessage(msg);
     this._resetAutoRotation();
+  }
+
+  getCurrentMessage() {
+    return this._currentMsg || null;
+  }
+
+  // Favorites stored in localStorage
+  _getFavorites() {
+    try {
+      const saved = localStorage.getItem('flipoff_favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  }
+
+  toggleFavorite() {
+    if (!this._currentMsg) return false;
+    const key = this._currentMsg.filter(l => l.trim()).join('|');
+    const favs = this._getFavorites();
+    const idx = favs.indexOf(key);
+    if (idx >= 0) {
+      favs.splice(idx, 1);
+      localStorage.setItem('flipoff_favorites', JSON.stringify(favs));
+      return false; // unfavorited
+    } else {
+      favs.push(key);
+      localStorage.setItem('flipoff_favorites', JSON.stringify(favs));
+      return true; // favorited
+    }
+  }
+
+  isFavorite() {
+    if (!this._currentMsg) return false;
+    const key = this._currentMsg.filter(l => l.trim()).join('|');
+    return this._getFavorites().includes(key);
   }
 
   _resetAutoRotation() {

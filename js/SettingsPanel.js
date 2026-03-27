@@ -392,6 +392,41 @@ export class SettingsPanel {
       }
 
       /* No gear icon — double-tap/long-press/dblclick opens settings */
+
+      /* Mobile portrait: bottom sheet instead of side panel */
+      @media (max-width: 600px) and (orientation: portrait) {
+        .settings-panel {
+          top: auto;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 75vh;
+          border-left: none;
+          border-top: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px 16px 0 0;
+          transform: translateY(100%);
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .settings-panel.open {
+          right: 0;
+          transform: translateY(0);
+        }
+        .sp-header {
+          padding: 12px 20px;
+        }
+        .sp-header::before {
+          content: '';
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 36px;
+          height: 4px;
+          background: rgba(255,255,255,0.2);
+          border-radius: 2px;
+        }
+      }
     `;
     document.head.appendChild(style);
     document.body.appendChild(this.panel);
