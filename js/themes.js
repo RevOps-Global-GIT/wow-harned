@@ -88,7 +88,7 @@ export const THEMES = {
   wisdom: {
     label: 'Wisdom',
     messages: [
-      ['', '', 'THIS TOO', 'SHALL PASS', '', '', '- PERSIAN', 'PROVERB'],
+      ['', '', 'THIS TOO', 'SHALL PASS', '', '- PERSIAN', 'PROVERB', ''],
       ['', 'THE BEST WAY', 'OUT IS ALWAYS', 'THROUGH', '', '- ROBERT FROST', '', ''],
       ['', 'WHAT YOU SEEK', 'IS SEEKING', 'YOU', '', '- RUMI', '', ''],
       ['', 'BE THE CHANGE', 'YOU WISH TO', 'SEE IN THE', 'WORLD', '', '- GANDHI', ''],

@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 59;
       const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 34;
       const usableH = vh - safeTop - safeBottom;
-      const targetH = usableH * 0.92;
+      const targetH = usableH * 0.97;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');

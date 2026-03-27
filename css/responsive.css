@@ -24,7 +24,7 @@
   }
 }
 
-/* Mobile portrait — accent bars move to top/bottom */
+/* Mobile portrait — accent bars outside grid at top/bottom of viewport */
 @media (max-width: 600px) and (orientation: portrait) {
   .tap-hint {
     display: none;
@@ -32,21 +32,22 @@
 
   .accent-bar {
     flex-direction: row;
-    position: absolute;
+    position: fixed;
     left: 50%;
     transform: translateX(-50%);
     top: auto;
     right: auto;
     gap: 6px;
+    z-index: 10;
   }
 
   .accent-bar-left {
-    top: calc(env(safe-area-inset-top, 20px) + 4px);
+    top: calc(env(safe-area-inset-top, 47px) + 6px);
     left: 50%;
   }
 
   .accent-bar-right {
-    bottom: calc(env(safe-area-inset-bottom, 8px) + 4px);
+    bottom: calc(env(safe-area-inset-bottom, 20px) + 6px);
     top: auto;
     right: auto;
     left: 50%;
@@ -58,14 +59,21 @@
   }
 }
 
-/* Landscape mobile — hide accents (too cramped) */
+/* Landscape mobile — accent bars on left/right like desktop */
 @media (max-height: 500px) {
   .board {
     padding: 4px 8px 8px;
   }
 
   .accent-bar {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .accent-segment {
+    width: 8px;
+    height: 8px;
   }
 
   .keyboard-hint {
