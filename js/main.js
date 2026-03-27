@@ -29,15 +29,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const settings = new SettingsPanel(rotator, ambientEngine);
   const keyboard = new KeyboardController(rotator, soundEngine, settings, ambientEngine);
 
+  // DEBUG: visible audio state banner (remove after debugging)
+  const dbg = document.createElement('div');
+  dbg.id = 'audio-debug';
+  dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:#fff;font:12px monospace;padding:6px 10px;z-index:99999;text-align:center;';
+  dbg.textContent = 'AUDIO: waiting for tap...';
+  document.body.appendChild(dbg);
+
   // Initialize audio on first user interaction
-  // iOS requires: synchronous init, click/touchend only (not touchstart),
-  // HTML Audio with real audio energy to bypass mute switch
   let audioInitialized = false;
-  const initAudio = () => {
+  const initAudio = (e) => {
     if (audioInitialized) return;
     audioInitialized = true;
 
-    soundEngine.init();
+    dbg.textContent = `AUDIO: init fired via ${e.type}`;
+    dbg.style.background = 'rgba(255,165,0,0.9)';
+
+    try {
+      soundEngine.init();
+      dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? 'yes' : 'pending'}`;
+      dbg.style.background = 'rgba(0,128,0,0.9)';
+
+      // Check buffer decode status after a delay
+      setTimeout(() => {
+        dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'NULL'}, muted=${soundEngine.muted}`;
+      }, 1000);
+
+      // Hide debug after 5 seconds
+      setTimeout(() => { dbg.style.display = 'none'; }, 5000);
+    } catch (err) {
+      dbg.textContent = `AUDIO ERROR: ${err.message}`;
+    }
+
     if (tapHint) tapHint.classList.add('hidden');
 
     if (ambientEngine.enabled) {
