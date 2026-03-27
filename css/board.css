@@ -21,9 +21,14 @@
   justify-content: center;
 }
 
-/* Accent Squares — hidden in fullscreen mode */
+/* Accent Squares */
 .accent-bar {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .accent-bar-left {
