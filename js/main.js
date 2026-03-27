@@ -7,12 +7,19 @@ import { SettingsPanel } from './SettingsPanel.js';
 import { GRID_COLS, GRID_ROWS } from './constants.js';
 
 // Portrait mobile: fewer cols = bigger tiles/text, more rows = fills screen
-// 12 cols handles words up to 12 chars (covers almost all English words)
 const PORTRAIT_COLS = 12;
 const PORTRAIT_ROWS = 14;
 
+// Landscape mobile: extra rows for top/bottom breathing room
+const LANDSCAPE_MOBILE_COLS = 16;
+const LANDSCAPE_MOBILE_ROWS = 10;
+
 function isMobilePortrait() {
   return window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+}
+
+function isMobileLandscape() {
+  return window.innerWidth <= 900 && window.innerHeight < window.innerWidth && window.innerHeight <= 500;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,8 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const soundEngine = new SoundEngine();
 
   const portrait = isMobilePortrait();
-  const cols = portrait ? PORTRAIT_COLS : GRID_COLS;
-  const rows = portrait ? PORTRAIT_ROWS : GRID_ROWS;
+  const landscape = isMobileLandscape();
+  const cols = portrait ? PORTRAIT_COLS : landscape ? LANDSCAPE_MOBILE_COLS : GRID_COLS;
+  const rows = portrait ? PORTRAIT_ROWS : landscape ? LANDSCAPE_MOBILE_ROWS : GRID_ROWS;
 
   const board = new Board(boardContainer, soundEngine, cols, rows);
   const rotator = new MessageRotator(board);
