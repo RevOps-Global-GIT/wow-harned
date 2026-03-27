@@ -253,6 +253,9 @@ export const THEMES = {
       ['', 'BE PATIENT', 'WITH ALL', 'THAT IS', 'UNRESOLVED', 'IN YOUR HEART', '', '- RILKE'],
       ['', 'WHAT MAKES', 'THE DESERT', 'BEAUTIFUL IS', 'THAT IT HIDES', 'A WELL', '', '- SAINT EXUPERY'],
       ['', 'THE WOUND IS', 'WHERE THE', 'LIGHT ENTERS', '', '', '- RUMI', ''],
+      ['', 'THERE IS', 'NOTHING MORE', 'IMPORTANT TO', 'TRUE GROWTH', 'THAN LETTING', 'GO', '- MICHAEL SINGER'],
+      ['', 'ONLY YOU CAN', 'TAKE INNER', 'FREEDOM AWAY', 'FROM YOURSELF', '', '- MICHAEL', 'SINGER'],
+      ['', 'THE PAST HAS', 'NO POWER', 'OVER THE', 'PRESENT', 'MOMENT', '', '- MICHAEL SINGER'],
     ]
   },
 };
