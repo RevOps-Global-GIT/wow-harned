@@ -32,7 +32,7 @@
 
   .accent-bar {
     flex-direction: row;
-    position: fixed;
+    position: absolute;
     left: 50%;
     transform: translateX(-50%);
     top: auto;
@@ -42,12 +42,12 @@
   }
 
   .accent-bar-left {
-    top: calc(env(safe-area-inset-top, 47px) + 6px);
+    top: -14px;
     left: 50%;
   }
 
   .accent-bar-right {
-    bottom: calc(env(safe-area-inset-bottom, 20px) + 6px);
+    bottom: -14px;
     top: auto;
     right: auto;
     left: 50%;
