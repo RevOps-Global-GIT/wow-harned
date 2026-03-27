@@ -382,6 +382,53 @@ export class SettingsPanel {
       .family-count { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 2px; }
 
       /* ===== THEME GRID ===== */
+      .search-wrap {
+        position: relative;
+        margin-bottom: 12px;
+      }
+      .search-wrap svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 14px;
+        color: rgba(255,255,255,0.2);
+        pointer-events: none;
+      }
+      .search-input {
+        width: 100%;
+        padding: 10px 12px 10px 36px;
+        background: rgba(255,255,255,0.04);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        box-sizing: border-box;
+      }
+      .search-input::placeholder { color: rgba(255,255,255,0.2); }
+      .search-input:focus { background: rgba(255,255,255,0.06); }
+      .search-clear {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.3);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 2px 4px;
+        display: none;
+      }
+      .search-results-label {
+        font-size: 11px;
+        color: rgba(255,255,255,0.25);
+        margin-bottom: 8px;
+      }
+
       .theme-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1129,6 +1176,39 @@ export class SettingsPanel {
     libLabel.textContent = 'Library';
     this.bodyEl.appendChild(libLabel);
 
+    // Search
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'search-wrap';
+    searchWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    const searchInput = document.createElement('input');
+    searchInput.className = 'search-input';
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search quotes...';
+    searchInput.value = this._searchQuery || '';
+    const searchClear = document.createElement('button');
+    searchClear.className = 'search-clear';
+    searchClear.textContent = '\u00d7';
+    searchClear.addEventListener('click', () => {
+      this._searchQuery = '';
+      this._render();
+    });
+    searchInput.addEventListener('input', () => {
+      this._searchQuery = searchInput.value;
+      searchClear.style.display = searchInput.value ? 'block' : 'none';
+      // Re-render to filter quotes (preserves search input value)
+      this._render();
+      // Refocus search and restore cursor position
+      const newInput = this.bodyEl.querySelector('.search-input');
+      if (newInput) {
+        newInput.focus();
+        newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+      }
+    });
+    if (this._searchQuery) searchClear.style.display = 'block';
+    searchWrap.appendChild(searchInput);
+    searchWrap.appendChild(searchClear);
+    this.bodyEl.appendChild(searchWrap);
+
     // Theme grid
     const themeGrid = document.createElement('div');
     themeGrid.className = 'theme-grid';
@@ -1163,12 +1243,31 @@ export class SettingsPanel {
     // Quote area for active tab
     const quoteArea = document.createElement('div');
     quoteArea.className = 'quote-area';
+    this._quoteAreaEl = quoteArea;
+
+    const query = (this._searchQuery || '').toLowerCase().trim();
+
+    // Search filter helper
+    const matchesSearch = (msg) => {
+      if (!query) return true;
+      const { body, attr } = this._quotePreview(msg);
+      return body.toLowerCase().includes(query) || attr.toLowerCase().includes(query);
+    };
 
     if (this._activeTab === 'my-quotes') {
       // My Quotes content
+      let shown = 0;
       this.messages.forEach((msg, i) => {
+        if (!matchesSearch(msg)) return;
         quoteArea.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
+        shown++;
       });
+      if (query && shown === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'search-results-label';
+        noResults.textContent = 'No quotes match "' + this._searchQuery + '"';
+        quoteArea.appendChild(noResults);
+      }
 
       const addBtn = document.createElement('button');
       addBtn.className = 'add-quote-btn';
@@ -1206,10 +1305,19 @@ export class SettingsPanel {
       rotToggle.appendChild(rotKnob);
       quoteArea.appendChild(rotToggle);
 
-      // Quote cards
+      // Quote cards (filtered by search)
+      let shownTheme = 0;
       msgs.forEach((msg, i) => {
+        if (!matchesSearch(msg)) return;
         quoteArea.appendChild(this._renderQuoteCard(msg, i, themeKey, msgs));
+        shownTheme++;
       });
+      if (query && shownTheme === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'search-results-label';
+        noResults.textContent = 'No quotes match "' + this._searchQuery + '"';
+        quoteArea.appendChild(noResults);
+      }
 
       const addBtn = document.createElement('button');
       addBtn.className = 'add-quote-btn';
