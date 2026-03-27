@@ -22,35 +22,12 @@
   .keyboard-hint {
     display: none;
   }
-}
 
-/* Mobile portrait — accent bars outside grid at top/bottom of viewport */
-@media (max-width: 600px) and (orientation: portrait) {
-  .tap-hint {
-    display: none;
-  }
-
+  /* Mobile accents positioned entirely by JS */
   .accent-bar {
-    flex-direction: row;
     position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    top: auto;
-    right: auto;
-    gap: 6px;
     z-index: 10;
-  }
-
-  .accent-bar-left {
-    top: var(--accent-top, 70px);
-    left: 50%;
-  }
-
-  .accent-bar-right {
-    bottom: var(--accent-bottom, 20px);
-    top: auto;
-    right: auto;
-    left: 50%;
+    gap: 4px;
   }
 
   .accent-segment {
@@ -59,31 +36,25 @@
   }
 }
 
-/* Landscape mobile — accent bars left/right like desktop */
+/* Mobile portrait */
+@media (max-width: 600px) and (orientation: portrait) {
+  .tap-hint {
+    display: none;
+  }
+
+  .accent-bar {
+    flex-direction: row;
+  }
+}
+
+/* Landscape mobile */
 @media (max-height: 500px) {
   .board {
     padding: 4px 8px 8px;
   }
 
   .accent-bar {
-    display: flex;
     flex-direction: column;
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    gap: 4px;
-    z-index: 10;
-  }
-
-  .accent-bar-left {
-    left: -4px;
-    top: 50%;
-  }
-
-  .accent-bar-right {
-    right: -4px;
-    left: auto;
-    top: 50%;
   }
 
   .accent-segment {

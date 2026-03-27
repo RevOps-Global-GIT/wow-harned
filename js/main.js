@@ -76,12 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Larger font for portrait — use 55% of tile width
       board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
-
-      // Position accent dots to overlap the grid top/bottom edges
-      const gridH = r * tileH + (r - 1) * gap;
-      const gridTop = (vh - gridH) / 2; // centered by flexbox
-      document.documentElement.style.setProperty('--accent-top', (gridTop - 4) + 'px');
-      document.documentElement.style.setProperty('--accent-bottom', (gridTop - 4) + 'px');
     } else if (vw <= 900 && vh < vw) {
       // Mobile landscape: rectangular tiles, fill both dimensions independently
       const gap = 1;
@@ -106,6 +100,52 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   resizeTiles();
   window.addEventListener('resize', resizeTiles);
+
+  // Position accent dots based on actual grid bounding box
+  const positionDots = () => {
+    const grid = board.boardEl.querySelector('.tile-grid');
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const barLeft = board.boardEl.querySelector('.accent-bar-left');
+    const barRight = board.boardEl.querySelector('.accent-bar-right');
+    if (!barLeft || !barRight) return;
+
+    const dotSize = isMobilePortrait() ? 10 : 8;
+    const halfDot = dotSize / 2;
+
+    if (isMobilePortrait()) {
+      // Portrait: dots centered horizontally, overlapping top/bottom grid edges
+      const cx = rect.left + rect.width / 2;
+      barLeft.style.left = (cx - dotSize - 2) + 'px';
+      barLeft.style.top = (rect.top - halfDot) + 'px';
+      barLeft.style.transform = 'none';
+      barLeft.style.right = 'auto';
+      barLeft.style.bottom = 'auto';
+
+      barRight.style.left = (cx - dotSize - 2) + 'px';
+      barRight.style.top = (rect.bottom - halfDot) + 'px';
+      barRight.style.transform = 'none';
+      barRight.style.right = 'auto';
+      barRight.style.bottom = 'auto';
+    } else if (isMobileLandscape()) {
+      // Landscape: dots centered vertically, overlapping left/right grid edges
+      const cy = rect.top + rect.height / 2;
+      barLeft.style.left = (rect.left - halfDot) + 'px';
+      barLeft.style.top = (cy - dotSize - 2) + 'px';
+      barLeft.style.transform = 'none';
+      barLeft.style.right = 'auto';
+      barLeft.style.bottom = 'auto';
+
+      barRight.style.left = (rect.right - halfDot) + 'px';
+      barRight.style.top = (cy - dotSize - 2) + 'px';
+      barRight.style.transform = 'none';
+      barRight.style.right = 'auto';
+      barRight.style.bottom = 'auto';
+    }
+  };
+  // Run after layout settles
+  requestAnimationFrame(() => requestAnimationFrame(positionDots));
+  window.addEventListener('resize', () => requestAnimationFrame(positionDots));
 
   // Reload on orientation change to rebuild grid
   window.addEventListener('orientationchange', () => {
