@@ -108,9 +108,41 @@
     }
   </style>
 </head>
-<body onclick="window.__userTapped=true">
-  <div class="board-wrap" id="board-container" onclick="window.__userTapped=true" ontouchend="window.__userTapped=true"></div>
+<body>
+  <div class="board-wrap" id="board-container"></div>
   <div class="tap-hint" id="tap-hint">double-tap for settings</div>
+  <script>
+    // Audio unlock — runs BEFORE module scripts, plain JS, no imports
+    // Creates AudioContext on first touch and stores on window for main.js
+    window.__audioCtx = null;
+    window.__audioReady = false;
+    function __unlockAudio(e) {
+      if (window.__audioReady) return;
+      window.__audioReady = true;
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        window.__audioCtx = new AC();
+        window.__audioCtx.resume();
+        var b = window.__audioCtx.createBuffer(1,1,window.__audioCtx.sampleRate);
+        var s = window.__audioCtx.createBufferSource();
+        s.buffer = b;
+        s.connect(window.__audioCtx.destination);
+        s.start();
+        var d = document.getElementById('audio-debug');
+        if (d) { d.textContent = 'AUDIO: unlocked via ' + e.type; d.style.background = 'rgba(0,128,0,0.9)'; }
+      } catch(err) {
+        var d = document.getElementById('audio-debug');
+        if (d) { d.textContent = 'AUDIO ERR: ' + err.message; }
+      }
+      document.removeEventListener('touchstart', __unlockAudio, true);
+      document.removeEventListener('touchend', __unlockAudio, true);
+      document.removeEventListener('click', __unlockAudio, true);
+    }
+    // Capture phase (true) — fires before any other handler can stop it
+    document.addEventListener('touchstart', __unlockAudio, true);
+    document.addEventListener('touchend', __unlockAudio, true);
+    document.addEventListener('click', __unlockAudio, true);
+  </script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

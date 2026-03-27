@@ -29,55 +29,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const settings = new SettingsPanel(rotator, ambientEngine);
   const keyboard = new KeyboardController(rotator, soundEngine, settings, ambientEngine);
 
-  // DEBUG: visible audio state banner (remove after debugging)
+  // DEBUG banner
   const dbg = document.createElement('div');
   dbg.id = 'audio-debug';
   dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:#fff;font:12px monospace;padding:6px 10px;z-index:99999;text-align:center;';
   dbg.textContent = 'AUDIO: waiting for tap...';
   document.body.appendChild(dbg);
 
-  // Audio init — uses both event listeners AND polling for inline handlers
+  // Poll for audio unlock from inline <script> in HTML
+  // The inline script creates AudioContext on first touch via capture-phase listeners
   let audioInitialized = false;
-  const doInit = (source) => {
-    if (audioInitialized) return;
-    audioInitialized = true;
+  const pollForAudio = setInterval(() => {
+    if (window.__audioReady && !audioInitialized) {
+      audioInitialized = true;
+      clearInterval(pollForAudio);
 
-    dbg.textContent = `AUDIO: init via ${source}`;
-    dbg.style.background = 'rgba(255,165,0,0.9)';
-
-    try {
       soundEngine.init();
-      dbg.style.background = 'rgba(0,128,0,0.9)';
+      if (tapHint) tapHint.classList.add('hidden');
+      if (ambientEngine.enabled) {
+        setTimeout(() => ambientEngine.start(), 500);
+      }
+
       setTimeout(() => {
-        dbg.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'pending'}, muted=${soundEngine.muted}`;
+        const d = document.getElementById('audio-debug');
+        if (d) {
+          d.textContent = `AUDIO: ctx=${soundEngine.ctx?.state}, buf=${soundEngine._audioBuffer ? soundEngine._audioBuffer.duration.toFixed(1) + 's' : 'pending'}, muted=${soundEngine.muted}`;
+          setTimeout(() => { d.style.display = 'none'; }, 4000);
+        }
       }, 1000);
-      setTimeout(() => { dbg.style.display = 'none'; }, 5000);
-    } catch (err) {
-      dbg.textContent = `AUDIO ERROR: ${err.message}`;
     }
-
-    if (tapHint) tapHint.classList.add('hidden');
-    if (ambientEngine.enabled) {
-      setTimeout(() => ambientEngine.start(), 500);
-    }
-  };
-
-  // Method 1: standard event listeners
-  const initFromEvent = (e) => doInit(e.type);
-  document.addEventListener('click', initFromEvent);
-  document.body.addEventListener('click', initFromEvent);
-  document.body.addEventListener('touchend', initFromEvent);
-  boardContainer.addEventListener('click', initFromEvent);
-  boardContainer.addEventListener('touchend', initFromEvent);
-  document.addEventListener('keydown', initFromEvent);
-
-  // Method 2: poll for inline onclick flag (fallback for iOS)
-  const pollForTap = setInterval(() => {
-    if (window.__userTapped) {
-      clearInterval(pollForTap);
-      doInit('inline-poll');
-    }
-  }, 200);
+  }, 100);
 
   // Dynamic tile sizing: fill the viewport
   const resizeTiles = () => {

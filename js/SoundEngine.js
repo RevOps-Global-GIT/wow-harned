@@ -33,24 +33,15 @@ export class SoundEngine {
     this._initialized = true;
 
     try {
-      // Step 1: Play HTML Audio with real audio energy to switch iOS
-      // audio session from "ambient" to "playback" (bypasses mute switch)
-      const unlock = new Audio(UNLOCK_MP3);
-      unlock.setAttribute('playsinline', '');
-      unlock.play().catch(() => {});
+      // Use pre-unlocked AudioContext from inline script if available
+      if (window.__audioCtx) {
+        this.ctx = window.__audioCtx;
+      } else {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.ctx.resume();
+      }
 
-      // Step 2: Create AudioContext and resume synchronously in gesture
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.ctx.resume();
-
-      // Step 3: Play buffer through context to activate audio path
-      const buf = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
-      const src = this.ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(this.ctx.destination);
-      src.start();
-
-      // Step 4: Decode the flap MP3 (Promise form — callback form has Safari bugs)
+      // Decode the flap MP3
       const binaryStr = atob(FLAP_AUDIO_BASE64);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
@@ -60,7 +51,7 @@ export class SoundEngine {
         .then(decoded => { this._audioBuffer = decoded; })
         .catch(() => { this._createSyntheticFlap(); });
 
-      // Step 5: Listen for interruptions (phone calls, Siri)
+      // Auto-resume after interruptions
       this.ctx.addEventListener('statechange', () => {
         if (this.ctx.state === 'interrupted' || this.ctx.state === 'suspended') {
           this.ctx.resume().catch(() => {});
