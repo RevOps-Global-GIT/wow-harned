@@ -104,6 +104,17 @@ export class Board {
     this.accentIndex++;
     this._updateAccentColors();
 
+    // Dim attribution rows (lines starting with -)
+    setTimeout(() => {
+      for (let r = 0; r < this.rows; r++) {
+        const line = (lines[r] || '').trim();
+        const isAttr = line.startsWith('-');
+        for (let c = 0; c < this.cols; c++) {
+          this.tiles[r][c].el.classList.toggle('attribution', isAttr);
+        }
+      }
+    }, TOTAL_TRANSITION);
+
     // Update grid state
     this.currentGrid = newGrid;
 

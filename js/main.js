@@ -87,6 +87,54 @@ document.addEventListener('DOMContentLoaded', () => {
   // Start message rotation
   rotator.start();
 
+  // Pause rotation when tab is hidden (saves battery for desk display)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      rotator.stop();
+    } else {
+      rotator.start();
+    }
+  });
+
+  // Swipe navigation on mobile
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (settings.visible) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Only register horizontal swipes (not vertical scrolls)
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) rotator.next(); // swipe left = next
+      else rotator.prev(); // swipe right = previous
+    }
+  }, { passive: true });
+
+  // Tap ripple effect
+  document.addEventListener('click', (e) => {
+    if (settings.visible) return;
+    const ripple = document.createElement('div');
+    ripple.style.cssText = `
+      position:fixed;left:${e.clientX}px;top:${e.clientY}px;
+      width:0;height:0;border-radius:50%;
+      background:rgba(255,255,255,0.15);
+      transform:translate(-50%,-50%);
+      pointer-events:none;z-index:9998;
+      transition:width 0.4s ease-out,height 0.4s ease-out,opacity 0.4s ease-out;
+    `;
+    document.body.appendChild(ripple);
+    requestAnimationFrame(() => {
+      ripple.style.width = '80px';
+      ripple.style.height = '80px';
+      ripple.style.opacity = '0';
+    });
+    setTimeout(() => ripple.remove(), 500);
+  });
+
   // Hide cursor after 3s of no movement (but not when settings open)
   let cursorTimer;
   const hideCursor = () => {

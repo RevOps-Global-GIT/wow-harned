@@ -104,3 +104,17 @@
 .tile.scrambling .tile-inner {
   will-change: transform;
 }
+
+/* Attribution rows are dimmer */
+.tile.attribution .tile-front span,
+.tile.attribution .tile-back span {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Reduced motion: skip flip animation, just swap instantly */
+@media (prefers-reduced-motion: reduce) {
+  .tile-inner.flipping {
+    animation: none;
+    transform: rotateX(-180deg);
+  }
+}

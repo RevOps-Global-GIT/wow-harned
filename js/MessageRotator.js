@@ -126,7 +126,35 @@ export class MessageRotator {
     return this._reflow(this._queue.pop());
   }
 
+  _getGreeting() {
+    const hour = new Date().getHours();
+    let greeting;
+    if (hour < 12) greeting = 'GOOD MORNING';
+    else if (hour < 17) greeting = 'GOOD AFTERNOON';
+    else greeting = 'GOOD EVENING';
+
+    const rows = this.board.rows;
+    const lines = Array(rows).fill('');
+    lines[Math.floor(rows / 2) - 1] = greeting;
+    return lines;
+  }
+
   start() {
+    // Show time-aware greeting first
+    if (!this._hasStarted) {
+      this._hasStarted = true;
+      this.board.displayMessage(this._getGreeting());
+      this._timer = setTimeout(() => {
+        this.next();
+        this._timer = setInterval(() => {
+          if (!this._paused && !this.board.isTransitioning) {
+            this.next();
+          }
+        }, this._getInterval());
+      }, this._getInterval());
+      return;
+    }
+
     this.next();
     this._timer = setInterval(() => {
       if (!this._paused && !this.board.isTransitioning) {
