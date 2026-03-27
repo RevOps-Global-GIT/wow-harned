@@ -114,12 +114,23 @@
   <script>
     // Audio unlock — runs BEFORE module scripts, plain JS, no imports
     // Creates AudioContext on first touch and stores on window for main.js
+    // Short MP3 with REAL audio energy — forces iOS audio session
+    // from "ambient" (respects mute switch) to "playback" (ignores it)
+    var UNLOCK_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBqpAAAAAAD/+1DEAAAH+AJX9AAAIiMGSz8wAABFgBAAKAAHBAEDPnPggCAIHJKAgGP8oCAJ/y4f/Lh/8uH4IAQBD6gICAYPl3/5c//BAEHwfB8oCCoBh+X//y7///ggCAJwfUBAQDAMf////4IAgCcH1AQEAx/////+CAIAnB9QEBAMP/////ggCAIAfB8=';
+
     window.__audioCtx = null;
     window.__audioReady = false;
     function __unlockAudio(e) {
       if (window.__audioReady) return;
       window.__audioReady = true;
       try {
+        // Step 1: HTML Audio with real content switches iOS audio session
+        // to "playback" mode which ignores the hardware mute switch
+        var a = new Audio(UNLOCK_MP3);
+        a.setAttribute('playsinline', '');
+        a.play().catch(function(){});
+
+        // Step 2: Create and unlock AudioContext
         var AC = window.AudioContext || window.webkitAudioContext;
         window.__audioCtx = new AC();
         window.__audioCtx.resume();
@@ -138,7 +149,6 @@
       document.removeEventListener('touchend', __unlockAudio, true);
       document.removeEventListener('click', __unlockAudio, true);
     }
-    // Capture phase (true) — fires before any other handler can stop it
     document.addEventListener('touchstart', __unlockAudio, true);
     document.addEventListener('touchend', __unlockAudio, true);
     document.addEventListener('click', __unlockAudio, true);
