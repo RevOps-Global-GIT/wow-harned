@@ -1,5 +1,3 @@
-import { FLAP_AUDIO_BASE64 } from './flapAudio.js';
-
 const CLICK_VOL_KEY = 'flipoff_click_vol';
 
 export class SoundEngine {
@@ -7,8 +5,6 @@ export class SoundEngine {
     this.ctx = null;
     this.muted = false;
     this._initialized = false;
-    this._audioBuffer = null;
-    this._currentSource = null;
 
     try {
       const saved = localStorage.getItem(CLICK_VOL_KEY);
@@ -30,24 +26,13 @@ export class SoundEngine {
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-      // Synchronous resume + silent buffer play within user gesture tick
-      // (iOS requires no awaits before the first audio play)
+      // Synchronous resume + silent play to unlock iOS audio
       this.ctx.resume();
-      const silentBuffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
-      const silentSource = this.ctx.createBufferSource();
-      silentSource.buffer = silentBuffer;
-      silentSource.connect(this.ctx.destination);
-      silentSource.start();
-
-      // Decode audio async (OK to await after unlock)
-      const binaryStr = atob(FLAP_AUDIO_BASE64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-      this.ctx.decodeAudioData(bytes.buffer.slice(0))
-        .then(buf => { this._audioBuffer = buf; })
-        .catch(e => console.warn('Failed to decode flap audio:', e));
+      const silent = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+      const src = this.ctx.createBufferSource();
+      src.buffer = silent;
+      src.connect(this.ctx.destination);
+      src.start();
     } catch (e) {
       console.warn('Audio init failed:', e);
     }
@@ -65,51 +50,84 @@ export class SoundEngine {
   }
 
   /**
-   * Play the full transition sound once.
-   * This is a single recorded clip of a split-flap board transition,
-   * played once per message change (not per tile).
+   * Synthesize a split-flap board transition sound.
+   * Creates a rapid series of mechanical clicks using noise bursts
+   * with resonant filtering — no external audio files needed.
    */
   playTransition() {
-    if (!this.ctx || !this._audioBuffer || this.muted) return;
+    if (!this.ctx || this.muted) return;
     this.resume();
 
-    // Stop any currently playing transition sound
-    if (this._currentSource) {
-      try {
-        this._currentSource.stop();
-      } catch (e) {
-        // ignore if already stopped
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.value = this.clickVolume * 0.6;
+    master.connect(ctx.destination);
+
+    // Number of individual flap clicks in the cascade
+    const numClicks = 20 + Math.floor(Math.random() * 10);
+    const totalDuration = 2.5; // seconds for full cascade
+
+    for (let i = 0; i < numClicks; i++) {
+      // Stagger clicks: dense at start, sparse at end
+      const t = (i / numClicks);
+      const clickTime = now + t * t * totalDuration;
+
+      // Each click: short noise burst through resonant filter
+      const bufLen = Math.floor(ctx.sampleRate * (0.008 + Math.random() * 0.012));
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let j = 0; j < bufLen; j++) {
+        data[j] = (Math.random() * 2 - 1) * (1 - j / bufLen);
       }
+
+      const source = ctx.createBufferSource();
+      source.buffer = buf;
+
+      // Resonant bandpass gives it a wooden/plastic character
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 800 + Math.random() * 2000;
+      bp.Q.value = 2 + Math.random() * 6;
+
+      // Volume envelope: louder clicks at the start
+      const clickGain = ctx.createGain();
+      const amplitude = 0.3 + 0.7 * (1 - t);
+      clickGain.gain.setValueAtTime(amplitude, clickTime);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, clickTime + 0.03);
+
+      source.connect(bp);
+      bp.connect(clickGain);
+      clickGain.connect(master);
+
+      source.start(clickTime);
+      source.stop(clickTime + 0.05);
     }
 
-    const source = this.ctx.createBufferSource();
-    source.buffer = this._audioBuffer;
-
-    const gain = this.ctx.createGain();
-    gain.gain.value = this.clickVolume;
-
-    source.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    source.start(0);
-    this._currentSource = source;
-
-    source.onended = () => {
-      if (this._currentSource === source) {
-        this._currentSource = null;
-      }
-    };
+    // Subtle tail resonance (the board settling)
+    const tailLen = ctx.sampleRate * 0.3;
+    const tailBuf = ctx.createBuffer(1, tailLen, ctx.sampleRate);
+    const tailData = tailBuf.getChannelData(0);
+    for (let i = 0; i < tailLen; i++) {
+      tailData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / tailLen, 3);
+    }
+    const tailSrc = ctx.createBufferSource();
+    tailSrc.buffer = tailBuf;
+    const tailFilter = ctx.createBiquadFilter();
+    tailFilter.type = 'lowpass';
+    tailFilter.frequency.value = 600;
+    const tailGain = ctx.createGain();
+    tailGain.gain.value = 0.15;
+    tailSrc.connect(tailFilter);
+    tailFilter.connect(tailGain);
+    tailGain.connect(master);
+    tailSrc.start(now + totalDuration * 0.7);
   }
 
-  /** Get the duration of the transition audio clip in ms */
   getTransitionDuration() {
-    if (this._audioBuffer) {
-      return this._audioBuffer.duration * 1000;
-    }
-    return 3800; // fallback
+    return 3800;
   }
 
-  // Keep this for API compatibility but it now plays the full transition
   scheduleFlaps() {
     this.playTransition();
   }
