@@ -83,7 +83,7 @@ export class AmbientEngine {
     // Restart with new track if running
     if (this._running) {
       this.stop();
-      // Wait for stop() cleanup (2s fade + disconnect) before restarting
+      // Quick crossfade to new track
       setTimeout(() => {
         this._running = false;
         this._masterGain = null;
@@ -92,7 +92,7 @@ export class AmbientEngine {
         this._activeSources = [];
         this.enabled = true;
         this.start();
-      }, 2200);
+      }, 800);
     }
   }
 
@@ -248,7 +248,7 @@ export class AmbientEngine {
     this._crossfadeTimers = [];
 
     if (this._masterGain && ctx) {
-      this._masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+      this._masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
       setTimeout(() => {
         this._activeSources.forEach(s => { try { s.source.stop(); } catch {} });
         this._activeSources = [];

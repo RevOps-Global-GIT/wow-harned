@@ -217,37 +217,43 @@ export class SettingsPanel {
 
       /* Fader (volume slider) */
       .fader {
-        margin-top: 8px;
+        margin-top: 12px;
+        margin-bottom: 4px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        padding: 0 2px;
       }
       .fader input[type="range"] {
         -webkit-appearance: none;
         appearance: none;
         flex: 1;
-        height: 3px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 1.5px;
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
         outline: none;
+        touch-action: none;
+        padding: 12px 0;
+        margin: -12px 0;
+        background-clip: content-box;
       }
       .fader input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 18px;
-        height: 12px;
+        width: 22px;
+        height: 14px;
         background: #fff;
-        border-radius: 2px;
+        border-radius: 3px;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
       }
       .fader input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 12px;
+        width: 22px;
+        height: 14px;
         background: #fff;
-        border-radius: 2px;
+        border-radius: 3px;
         border: none;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
       }
       .fader-val {
         font-size: 10px;
@@ -332,19 +338,23 @@ export class SettingsPanel {
         -webkit-appearance: none;
         appearance: none;
         width: 100%;
-        height: 3px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 1.5px;
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
         outline: none;
+        touch-action: none;
+        padding: 12px 0;
+        margin: -12px 0;
+        background-clip: content-box;
       }
       .speed-fader input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 18px;
-        height: 12px;
+        width: 22px;
+        height: 14px;
         background: #fff;
-        border-radius: 2px;
+        border-radius: 3px;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
       }
       .speed-fader input[type="range"]::-moz-range-thumb {
         width: 18px;
