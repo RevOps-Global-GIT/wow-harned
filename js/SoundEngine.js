@@ -2,8 +2,10 @@ import { FLAP_AUDIO_BASE64 } from './flapAudio.js';
 
 const CLICK_VOL_KEY = 'flipoff_click_vol';
 
-// Tiny silent WAV to unlock iOS audio session (bypasses mute switch)
-const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+// Short MP3 with actual audio energy (not silence!) to force iOS
+// audio session from "ambient" (respects mute switch) to "playback"
+// (ignores mute switch). A truly silent file does NOT trigger the switch.
+const UNLOCK_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBqpAAAAAAD/+1DEAAAH+AJX9AAAIiMGSz8wAABFgBAAKAAHBAEDPnPggCAIHJKAgGP8oCAJ/y4f/Lh/8uH4IAQBD6gICAYPl3/5c//BAEHwfB8oCCoBh+X//y7///ggCAJwfUBAQDAMf////4IAgCcH1AQEAx/////+CAIAnB9QEBAMP/////ggCAIAfB8=';
 
 export class SoundEngine {
   constructor() {
@@ -12,7 +14,6 @@ export class SoundEngine {
     this._initialized = false;
     this._audioBuffer = null;
     this._currentSource = null;
-    this._ready = false;
 
     try {
       const saved = localStorage.getItem(CLICK_VOL_KEY);
@@ -32,73 +33,65 @@ export class SoundEngine {
     this._initialized = true;
 
     try {
-      // Step 1: Play an HTML Audio element to unlock iOS audio session
-      // This makes audio work even when the silent/mute switch is on
-      const unlock = new Audio(SILENT_WAV);
+      // Step 1: Play HTML Audio with real audio energy to switch iOS
+      // audio session from "ambient" to "playback" (bypasses mute switch)
+      const unlock = new Audio(UNLOCK_MP3);
       unlock.setAttribute('playsinline', '');
       unlock.play().catch(() => {});
 
-      // Step 2: Create AudioContext synchronously within gesture
+      // Step 2: Create AudioContext and resume synchronously in gesture
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.ctx.resume();
 
-      // Step 3: Play silent buffer through AudioContext to fully unlock it
-      const silentBuf = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
-      const silentSrc = this.ctx.createBufferSource();
-      silentSrc.buffer = silentBuf;
-      silentSrc.connect(this.ctx.destination);
-      silentSrc.start();
+      // Step 3: Play buffer through context to activate audio path
+      const buf = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(this.ctx.destination);
+      src.start();
 
-      // Step 4: Decode the flap audio (async, non-blocking)
+      // Step 4: Decode the flap MP3 (Promise form — callback form has Safari bugs)
       const binaryStr = atob(FLAP_AUDIO_BASE64);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
       }
-      this.ctx.decodeAudioData(
-        bytes.buffer.slice(0),
-        (buf) => {
-          this._audioBuffer = buf;
-          this._ready = true;
-        },
-        (e) => {
-          console.warn('Flap audio decode failed:', e);
-          // Fallback: generate a synthetic click buffer
-          this._createSyntheticFlap();
+      this.ctx.decodeAudioData(bytes.buffer.slice(0))
+        .then(decoded => { this._audioBuffer = decoded; })
+        .catch(() => { this._createSyntheticFlap(); });
+
+      // Step 5: Listen for interruptions (phone calls, Siri)
+      this.ctx.addEventListener('statechange', () => {
+        if (this.ctx.state === 'interrupted' || this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
         }
-      );
+      });
     } catch (e) {
       console.warn('Audio init failed:', e);
     }
   }
 
-  /** Fallback: create a synthetic flap sound if MP3 decode fails */
   _createSyntheticFlap() {
     if (!this.ctx) return;
     const sr = this.ctx.sampleRate;
-    const duration = 3.5;
-    const len = Math.floor(sr * duration);
+    const len = Math.floor(sr * 3.5);
     const buf = this.ctx.createBuffer(1, len, sr);
     const data = buf.getChannelData(0);
-
-    const numClicks = 25;
-    for (let c = 0; c < numClicks; c++) {
-      const t = c / numClicks;
-      const clickSample = Math.floor(t * t * len * 0.7);
-      const clickLen = Math.floor(sr * (0.005 + Math.random() * 0.01));
+    for (let c = 0; c < 25; c++) {
+      const t = c / 25;
+      const pos = Math.floor(t * t * len * 0.7);
+      const cLen = Math.floor(sr * (0.005 + Math.random() * 0.01));
       const amp = 0.3 + 0.5 * (1 - t);
-      for (let j = 0; j < clickLen && clickSample + j < len; j++) {
-        data[clickSample + j] += (Math.random() * 2 - 1) * amp * (1 - j / clickLen);
+      for (let j = 0; j < cLen && pos + j < len; j++) {
+        data[pos + j] += (Math.random() * 2 - 1) * amp * (1 - j / cLen);
       }
     }
-
     this._audioBuffer = buf;
-    this._ready = true;
   }
 
   resume() {
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
   }
 
@@ -123,22 +116,16 @@ export class SoundEngine {
 
     source.connect(gain);
     gain.connect(this.ctx.destination);
-
     source.start(0);
     this._currentSource = source;
 
     source.onended = () => {
-      if (this._currentSource === source) {
-        this._currentSource = null;
-      }
+      if (this._currentSource === source) this._currentSource = null;
     };
   }
 
   getTransitionDuration() {
-    if (this._audioBuffer) {
-      return this._audioBuffer.duration * 1000;
-    }
-    return 3800;
+    return this._audioBuffer ? this._audioBuffer.duration * 1000 : 3800;
   }
 
   scheduleFlaps() {
