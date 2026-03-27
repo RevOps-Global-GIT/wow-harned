@@ -129,15 +129,17 @@ document.addEventListener('DOMContentLoaded', () => {
       barRight.style.bottom = 'auto';
     } else if (isMobileLandscape()) {
       // Landscape: dots centered vertically, overlapping left/right grid edges
+      // Bar = 2 dots (8px each) + gap (4px) = 20px total
+      const barH = dotSize * 2 + 4;
       const cy = rect.top + rect.height / 2;
       barLeft.style.left = (rect.left - halfDot) + 'px';
-      barLeft.style.top = (cy - dotSize - 2) + 'px';
+      barLeft.style.top = (cy - barH / 2) + 'px';
       barLeft.style.transform = 'none';
       barLeft.style.right = 'auto';
       barLeft.style.bottom = 'auto';
 
       barRight.style.left = (rect.right - halfDot) + 'px';
-      barRight.style.top = (cy - dotSize - 2) + 'px';
+      barRight.style.top = (cy - barH / 2) + 'px';
       barRight.style.transform = 'none';
       barRight.style.right = 'auto';
       barRight.style.bottom = 'auto';
