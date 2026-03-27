@@ -254,26 +254,31 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   document.addEventListener('mousemove', showCursor);
 
-  // iOS "Add to Home Screen" banner
+  // "Add to Home Screen" banner (iOS + Android)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
   const isStandalone = window.navigator.standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches;
-  const bannerDismissed = localStorage.getItem('flipoff_ios_banner') === 'dismissed';
+  const bannerDismissed = localStorage.getItem('flipoff_pwa_banner') === 'dismissed';
 
-  if (isIOS && !isStandalone && !bannerDismissed) {
+  if (isMobile && !isStandalone && !bannerDismissed) {
+    const instructions = isIOS
+      ? 'Tap <strong>Share</strong> then <strong>Add to Home Screen</strong>'
+      : 'Tap <strong>Menu (\u22ee)</strong> then <strong>Add to Home Screen</strong>';
+    const iconSvg = isIOS
+      ? '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>'
+      : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>';
+
     const banner = document.createElement('div');
     banner.className = 'ios-banner';
     banner.innerHTML = `
       <div class="ios-banner-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-          <polyline points="16 6 12 2 8 6"/>
-          <line x1="12" y1="2" x2="12" y2="15"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
       </div>
       <div class="ios-banner-text">
-        For <strong>true fullscreen</strong>, tap Share then <strong>Add to Home Screen</strong>
+        For the <strong>best experience</strong>, ${instructions}
       </div>
       <button class="ios-banner-close">&times;</button>
     `;
@@ -282,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     banner.querySelector('.ios-banner-close').addEventListener('click', (e) => {
       e.stopPropagation();
       banner.classList.add('dismissed');
-      localStorage.setItem('flipoff_ios_banner', 'dismissed');
+      localStorage.setItem('flipoff_pwa_banner', 'dismissed');
     });
 
     // Auto-dismiss after 8 seconds
