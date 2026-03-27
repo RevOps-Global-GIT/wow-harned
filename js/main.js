@@ -62,13 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isMobilePortrait()) {
       // Portrait: width-constrained tiles with taller aspect ratio
+      // Use 85% of viewport height — board-wrap CSS handles safe area padding
+      // and flexbox centering, so the grid lands in the right spot
       const gap = 1;
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
-      // Account for safe areas (Dynamic Island ~59px, home indicator ~34px)
-      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 59;
-      const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 34;
-      const usableH = vh - safeTop - safeBottom;
-      const targetH = usableH * 0.97;
+      const targetH = vh * 0.85;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');
