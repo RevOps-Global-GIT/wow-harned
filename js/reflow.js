@@ -6,16 +6,24 @@ export function reflowMessage(lines, targetCols, targetRows) {
   // Extract non-empty content
   const content = lines.filter(l => l && l.trim() !== '');
 
-  // Separate body from attribution (lines starting with -)
+  // Separate body from attribution
+  // Once we find a line starting with -, everything from there is attribution
   const bodyParts = [];
-  let attribution = null;
+  const attrParts = [];
+  let foundAttr = false;
   for (const line of content) {
-    if (line.trim().startsWith('-')) {
-      attribution = line.trim();
+    if (!foundAttr && line.trim().startsWith('-')) {
+      foundAttr = true;
+    }
+    if (foundAttr) {
+      attrParts.push(line.trim());
     } else {
       bodyParts.push(line.trim());
     }
   }
+
+  // Join attribution parts into one string
+  const attribution = attrParts.length > 0 ? attrParts.join(' ') : null;
 
   // Word-wrap body to target width
   const allWords = bodyParts.join(' ').split(/\s+/).filter(w => w);
@@ -37,27 +45,23 @@ export function reflowMessage(lines, targetCols, targetRows) {
   // Wrap attribution if present
   const attrLines = [];
   if (attribution) {
-    if (attribution.length <= targetCols) {
-      attrLines.push(attribution);
-    } else {
-      const attrWords = attribution.split(/\s+/);
-      let attrCurrent = '';
-      for (const w of attrWords) {
-        if (attrCurrent === '') {
-          attrCurrent = w;
-        } else if (attrCurrent.length + 1 + w.length <= targetCols) {
-          attrCurrent += ' ' + w;
-        } else {
-          attrLines.push(attrCurrent);
-          attrCurrent = w;
-        }
+    const attrWords = attribution.split(/\s+/);
+    let attrCurrent = '';
+    for (const w of attrWords) {
+      if (attrCurrent === '') {
+        attrCurrent = w;
+      } else if (attrCurrent.length + 1 + w.length <= targetCols) {
+        attrCurrent += ' ' + w;
+      } else {
+        attrLines.push(attrCurrent);
+        attrCurrent = w;
       }
-      if (attrCurrent) attrLines.push(attrCurrent);
     }
+    if (attrCurrent) attrLines.push(attrCurrent);
   }
 
   // Combine with blank separator before attribution
-  const allContent = attribution
+  const allContent = attrLines.length > 0
     ? [...wrapped, '', ...attrLines]
     : [...wrapped];
 
