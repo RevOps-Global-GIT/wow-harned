@@ -1,36 +1,53 @@
 import { CROWD_MURMUR_BASE64 } from './crowdAudio.js';
 import { PIANO_JAZZ_BASE64 } from './pianoAudio.js';
+import { AMBIENT_ENO_BASE64, PIANO_SATIE_BASE64 } from './extraAudio.js';
 
 const STORAGE_KEY = 'flipoff_ambient';
 const AMBIENT_VOL_KEY = 'flipoff_ambient_vol';
 const MURMUR_KEY = 'flipoff_murmur';
 const MURMUR_VOL_KEY = 'flipoff_murmur_vol';
+const MUSIC_KEY = 'flipoff_music_choice';
+const CLICK_VOL_KEY = 'flipoff_click_vol';
+
+// Available music tracks
+const MUSIC_TRACKS = {
+  'piano-jazz': { label: 'Cafe Piano', getBase64: () => PIANO_JAZZ_BASE64 },
+  'piano-satie': { label: 'Contemplative Piano', getBase64: () => PIANO_SATIE_BASE64 },
+  'ambient-eno': { label: 'Ambient Pads', getBase64: () => AMBIENT_ENO_BASE64 },
+};
+
+export const MUSIC_TRACK_OPTIONS = Object.entries(MUSIC_TRACKS).map(([k, v]) => ({ key: k, label: v.label }));
 
 export class AmbientEngine {
   constructor(soundEngine) {
     this.soundEngine = soundEngine;
     this.enabled = this._loadState();
+
     try {
       const saved = localStorage.getItem(AMBIENT_VOL_KEY);
-      this.volume = saved !== null ? parseFloat(saved) : 0.6;
-    } catch { this.volume = 0.6; }
+      this.volume = saved !== null ? parseFloat(saved) : 0.5;
+    } catch { this.volume = 0.5; }
 
     try {
       const mv = localStorage.getItem(MURMUR_KEY);
       this.murmurEnabled = mv === null ? false : mv === 'true';
     } catch { this.murmurEnabled = false; }
+
     try {
       const mvol = localStorage.getItem(MURMUR_VOL_KEY);
       this.murmurVolume = mvol !== null ? parseFloat(mvol) : 0.5;
     } catch { this.murmurVolume = 0.5; }
 
+    try {
+      this.musicChoice = localStorage.getItem(MUSIC_KEY) || 'piano-jazz';
+    } catch { this.musicChoice = 'piano-jazz'; }
+
     this._running = false;
     this._masterGain = null;
-    this._pianoSource = null;
-    this._pianoGain = null;
-    this._murmurSource = null;
+    this._musicGain = null;
     this._murmurGain = null;
-    this._murmurSources = [];
+    this._activeSources = [];
+    this._crossfadeTimers = [];
   }
 
   _loadState() {
@@ -40,16 +57,14 @@ export class AmbientEngine {
     } catch { return false; }
   }
 
-  _saveState() {
-    localStorage.setItem(STORAGE_KEY, String(this.enabled));
-  }
+  _saveState() { localStorage.setItem(STORAGE_KEY, String(this.enabled)); }
 
   setVolume(val) {
     this.volume = val;
     localStorage.setItem(AMBIENT_VOL_KEY, String(val));
-    if (this._masterGain) {
+    if (this._musicGain) {
       const ctx = this.soundEngine.ctx;
-      if (ctx) this._masterGain.gain.linearRampToValueAtTime(val, ctx.currentTime + 0.1);
+      if (ctx) this._musicGain.gain.linearRampToValueAtTime(val, ctx.currentTime + 0.1);
     }
   }
 
@@ -62,51 +77,109 @@ export class AmbientEngine {
     }
   }
 
+  setMusicChoice(key) {
+    this.musicChoice = key;
+    localStorage.setItem(MUSIC_KEY, key);
+    // Restart with new track if running
+    if (this._running) {
+      this.stop();
+      setTimeout(() => { this.enabled = true; this.start(); }, 500);
+    }
+  }
+
   toggleMurmur() {
     this.murmurEnabled = !this.murmurEnabled;
     localStorage.setItem(MURMUR_KEY, String(this.murmurEnabled));
-
     if (this.murmurEnabled) {
-      if (!this._running) {
-        this.enabled = true;
-        this._saveState();
-        this.start();
-      }
-      if (this._running) {
-        this._startMurmur();
-      }
+      if (!this._running) { this.enabled = true; this._saveState(); this.start(); }
+      if (this._running) this._startCrossfadeLoop('murmur', CROWD_MURMUR_BASE64, this._murmurGain);
     } else if (this._running) {
-      this._stopMurmur();
+      this._stopLayer('murmur');
     }
-
     return this.murmurEnabled;
   }
 
   toggle() {
     this.enabled = !this.enabled;
     this._saveState();
-    if (this.enabled) {
-      this.start();
-    } else {
-      this.stop();
-    }
+    if (this.enabled) this.start();
+    else this.stop();
     return this.enabled;
   }
 
-  // Decode base64 audio into an AudioBuffer
   _decodeBase64(ctx, base64) {
     return new Promise((resolve, reject) => {
       try {
-        const binaryStr = atob(base64);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
-        }
-        ctx.decodeAudioData(bytes.buffer.slice(0))
-          .then(resolve)
-          .catch(reject);
+        const bin = atob(base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        ctx.decodeAudioData(bytes.buffer.slice(0)).then(resolve).catch(reject);
       } catch (e) { reject(e); }
     });
+  }
+
+  /**
+   * Crossfade loop: plays two overlapping copies of the buffer.
+   * When one is about to end, the next starts with a fade-in while
+   * the current fades out. This eliminates the gap at the loop point.
+   */
+  async _startCrossfadeLoop(layerName, base64Data, gainNode) {
+    const ctx = this.soundEngine.ctx;
+    if (!ctx || !this._masterGain) return;
+
+    try {
+      const buffer = await this._decodeBase64(ctx, base64Data);
+      const crossfade = 4; // seconds of overlap
+      const interval = (buffer.duration - crossfade) * 1000;
+
+      const playOne = () => {
+        if (!this._running) return;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        const fadeGain = ctx.createGain();
+        fadeGain.gain.setValueAtTime(0, ctx.currentTime);
+        fadeGain.gain.linearRampToValueAtTime(1, ctx.currentTime + crossfade);
+        fadeGain.gain.setValueAtTime(1, ctx.currentTime + buffer.duration - crossfade);
+        fadeGain.gain.linearRampToValueAtTime(0, ctx.currentTime + buffer.duration);
+
+        source.connect(fadeGain);
+        fadeGain.connect(gainNode);
+        source.start();
+        this._activeSources.push({ name: layerName, source, fadeGain });
+
+        source.onended = () => {
+          this._activeSources = this._activeSources.filter(s => s.source !== source);
+        };
+      };
+
+      // Start first copy immediately
+      playOne();
+
+      // Schedule overlapping copies
+      const timer = setInterval(() => {
+        if (!this._running) { clearInterval(timer); return; }
+        playOne();
+      }, interval);
+
+      this._crossfadeTimers.push({ name: layerName, timer });
+    } catch (e) {
+      console.warn(`${layerName} decode failed:`, e);
+    }
+  }
+
+  _stopLayer(layerName) {
+    const ctx = this.soundEngine.ctx;
+    // Fade out active sources for this layer
+    this._activeSources.filter(s => s.name === layerName).forEach(s => {
+      if (ctx) {
+        s.fadeGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+        setTimeout(() => { try { s.source.stop(); } catch {} }, 1500);
+      }
+    });
+    // Clear timers for this layer
+    this._crossfadeTimers.filter(t => t.name === layerName).forEach(t => clearInterval(t.timer));
+    this._crossfadeTimers = this._crossfadeTimers.filter(t => t.name !== layerName);
   }
 
   async start() {
@@ -116,89 +189,53 @@ export class AmbientEngine {
 
     this._running = true;
 
-    // Master gain with fade-in
+    // Master output
     this._masterGain = ctx.createGain();
-    this._masterGain.gain.value = 0;
+    this._masterGain.gain.value = 1;
     this._masterGain.connect(ctx.destination);
-    this._masterGain.gain.linearRampToValueAtTime(this.volume, ctx.currentTime + 3);
 
-    // --- Piano jazz (real recording, looped) ---
-    try {
-      const pianoBuffer = await this._decodeBase64(ctx, PIANO_JAZZ_BASE64);
-      this._pianoGain = ctx.createGain();
-      this._pianoGain.gain.value = 0.7;
-      this._pianoGain.connect(this._masterGain);
+    // Music gain
+    this._musicGain = ctx.createGain();
+    this._musicGain.gain.value = 0;
+    this._musicGain.connect(this._masterGain);
+    this._musicGain.gain.linearRampToValueAtTime(this.volume, ctx.currentTime + 3);
 
-      this._pianoSource = ctx.createBufferSource();
-      this._pianoSource.buffer = pianoBuffer;
-      this._pianoSource.loop = true;
-      this._pianoSource.connect(this._pianoGain);
-      this._pianoSource.start();
-    } catch (e) {
-      console.warn('Piano decode failed:', e);
+    // Murmur gain
+    this._murmurGain = ctx.createGain();
+    this._murmurGain.gain.value = 0;
+    this._murmurGain.connect(this._masterGain);
+    if (this.murmurEnabled) {
+      this._murmurGain.gain.linearRampToValueAtTime(this.murmurVolume, ctx.currentTime + 2);
+    }
+
+    // Start music with crossfade loop
+    const track = MUSIC_TRACKS[this.musicChoice];
+    if (track) {
+      this._startCrossfadeLoop('music', track.getBase64(), this._musicGain);
     }
 
     // Start murmur if enabled
     if (this.murmurEnabled) {
-      this._startMurmur();
+      this._startCrossfadeLoop('murmur', CROWD_MURMUR_BASE64, this._murmurGain);
     }
   }
 
   stop() {
     this._running = false;
-
     const ctx = this.soundEngine.ctx;
-    if (!ctx) return;
 
-    if (this._masterGain) {
+    // Clear all timers
+    this._crossfadeTimers.forEach(t => clearInterval(t.timer));
+    this._crossfadeTimers = [];
+
+    if (this._masterGain && ctx) {
       this._masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
       setTimeout(() => {
-        try { this._pianoSource?.stop(); } catch {}
-        this._murmurSources.forEach(s => { try { s.stop(); } catch {} });
-        this._murmurSources = [];
-        this._pianoSource = null;
-        this._murmurGain = null;
+        this._activeSources.forEach(s => { try { s.source.stop(); } catch {} });
+        this._activeSources = [];
         this._masterGain?.disconnect();
         this._masterGain = null;
-      }, 2000);
-    }
-  }
-
-  // --- Crowd murmur (real recording, looped) ---
-
-  async _startMurmur() {
-    const ctx = this.soundEngine.ctx;
-    if (!ctx || !this._masterGain) return;
-
-    this._murmurGain = ctx.createGain();
-    this._murmurGain.gain.value = 0;
-    this._murmurGain.connect(this._masterGain);
-    this._murmurGain.gain.linearRampToValueAtTime(this.murmurVolume, ctx.currentTime + 2);
-
-    try {
-      const buffer = await this._decodeBase64(ctx, CROWD_MURMUR_BASE64);
-      if (!this._murmurGain) return;
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-      source.connect(this._murmurGain);
-      source.start();
-      this._murmurSources.push(source);
-    } catch (e) {
-      console.warn('Murmur decode failed:', e);
-    }
-  }
-
-  _stopMurmur() {
-    if (this._murmurGain) {
-      const ctx = this.soundEngine.ctx;
-      if (ctx) {
-        this._murmurGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
-      }
-      setTimeout(() => {
-        this._murmurSources.forEach(s => { try { s.stop(); } catch {} });
-        this._murmurSources = [];
-        this._murmurGain?.disconnect();
+        this._musicGain = null;
         this._murmurGain = null;
       }, 2000);
     }

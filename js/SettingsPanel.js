@@ -1,6 +1,7 @@
 import { MESSAGES, GRID_ROWS, GRID_COLS } from './constants.js';
 import { THEMES, THEME_KEYS, DEFAULT_THEME_KEYS } from './themes.js';
 import { shareMessage } from './sharedMessages.js';
+import { MUSIC_TRACK_OPTIONS } from './AmbientEngine.js';
 
 const STORAGE_KEY = 'flipoff_messages';
 const EDITS_KEY = 'flipoff_theme_edits';
@@ -159,17 +160,19 @@ export class SettingsPanel {
       .sp-tabs::-webkit-scrollbar { display: none; }
       .sp-tab {
         padding: 10px 14px;
-        color: rgba(255,255,255,0.35);
-        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
         border-bottom: 2px solid transparent;
         transition: all 0.15s;
         flex-shrink: 0;
+        background: rgba(255,255,255,0.03);
+        border-radius: 6px 6px 0 0;
       }
-      .sp-tab:hover { color: rgba(255,255,255,0.6); }
-      .sp-tab.active { color: #fff; border-bottom-color: #00aaff; }
+      .sp-tab:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); }
+      .sp-tab.active { color: #fff; border-bottom-color: #00aaff; background: rgba(0,170,255,0.08); }
       .sp-tab .sp-tab-count {
         color: rgba(255,255,255,0.2);
         font-size: 10px;
@@ -428,7 +431,7 @@ export class SettingsPanel {
     soundSection.className = 'sp-section';
     soundSection.innerHTML = '<div class="sp-label">Sound</div>';
 
-    // Flap click toggle
+    // Flap click toggle + volume
     const clickOn = this.rotator.board.soundEngine && !this.rotator.board.soundEngine.muted;
     const clickRow = this._createToggleRow(
       clickOn,
@@ -437,19 +440,51 @@ export class SettingsPanel {
       () => { if (this.rotator.board.soundEngine) { this.rotator.board.soundEngine.toggleMute(); this._render(); } }
     );
     soundSection.appendChild(clickRow);
+    if (clickOn) {
+      const clickVol = this.rotator.board.soundEngine?.clickVolume || 0.8;
+      soundSection.appendChild(this._createSlider('Click Volume', Math.round(clickVol * 100) + '%', 0, 1, 0.05, clickVol, (val) => {
+        if (this.rotator.board.soundEngine) this.rotator.board.soundEngine.setClickVolume(val);
+        return Math.round(val * 100) + '%';
+      }));
+    }
 
-    // Ambient toggle
+    // Music toggle + track selector + volume
     const ambientOn = this.ambientEngine && this.ambientEngine.enabled;
+    const currentTrack = MUSIC_TRACK_OPTIONS.find(t => t.key === this.ambientEngine?.musicChoice);
     const ambientRow = this._createToggleRow(
       ambientOn,
-      ambientOn ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
-      ambientOn ? 'Piano Jazz' : 'Piano Off',
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+      ambientOn ? (currentTrack?.label || 'Music') : 'Music Off',
       () => { if (this.ambientEngine) { this.ambientEngine.toggle(); this._render(); } }
     );
     ambientRow.style.marginTop = '8px';
     soundSection.appendChild(ambientRow);
 
-    // Murmur toggle
+    if (ambientOn && this.ambientEngine) {
+      // Track selector
+      const selectWrap = document.createElement('div');
+      selectWrap.style.cssText = 'margin:6px 0 4px;';
+      const select = document.createElement('select');
+      select.style.cssText = 'width:100%;padding:8px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;appearance:none;-webkit-appearance:none;cursor:pointer;';
+      MUSIC_TRACK_OPTIONS.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.key;
+        o.textContent = opt.label;
+        if (opt.key === this.ambientEngine.musicChoice) o.selected = true;
+        select.appendChild(o);
+      });
+      select.addEventListener('change', () => { this.ambientEngine.setMusicChoice(select.value); this._render(); });
+      selectWrap.appendChild(select);
+      soundSection.appendChild(selectWrap);
+
+      // Music volume
+      soundSection.appendChild(this._createSlider('Music Volume', Math.round(this.ambientEngine.volume * 100) + '%', 0, 1, 0.05, this.ambientEngine.volume, (val) => {
+        this.ambientEngine.setVolume(val);
+        return Math.round(val * 100) + '%';
+      }));
+    }
+
+    // Murmur toggle + volume
     if (this.ambientEngine) {
       const murmurOn = this.ambientEngine.murmurEnabled;
       const murmurRow = this._createToggleRow(
@@ -460,6 +495,13 @@ export class SettingsPanel {
       );
       murmurRow.style.marginTop = '8px';
       soundSection.appendChild(murmurRow);
+
+      if (murmurOn) {
+        soundSection.appendChild(this._createSlider('Murmur Volume', Math.round(this.ambientEngine.murmurVolume * 100) + '%', 0, 1, 0.05, this.ambientEngine.murmurVolume, (val) => {
+          this.ambientEngine.setMurmurVolume(val);
+          return Math.round(val * 100) + '%';
+        }));
+      }
     }
 
     this.bodyEl.appendChild(soundSection);
