@@ -23,33 +23,31 @@ export class SoundEngine {
     localStorage.setItem(CLICK_VOL_KEY, String(val));
   }
 
-  async init() {
+  init() {
     if (this._initialized) return;
     this._initialized = true;
 
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-      // Resume immediately within user gesture (required on iOS)
-      if (this.ctx.state === 'suspended') {
-        await this.ctx.resume();
-      }
-
-      // Play a silent buffer to fully unlock iOS audio
+      // Synchronous resume + silent buffer play within user gesture tick
+      // (iOS requires no awaits before the first audio play)
+      this.ctx.resume();
       const silentBuffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
       const silentSource = this.ctx.createBufferSource();
       silentSource.buffer = silentBuffer;
       silentSource.connect(this.ctx.destination);
       silentSource.start();
 
-      // Decode the embedded audio clip
+      // Decode audio async (OK to await after unlock)
       const binaryStr = atob(FLAP_AUDIO_BASE64);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
       }
-      // Use copy of buffer since decodeAudioData detaches the original
-      this._audioBuffer = await this.ctx.decodeAudioData(bytes.buffer.slice(0));
+      this.ctx.decodeAudioData(bytes.buffer.slice(0))
+        .then(buf => { this._audioBuffer = buf; })
+        .catch(e => console.warn('Failed to decode flap audio:', e));
     } catch (e) {
       console.warn('Audio init failed:', e);
     }

@@ -29,27 +29,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const settings = new SettingsPanel(rotator, ambientEngine);
   const keyboard = new KeyboardController(rotator, soundEngine, settings, ambientEngine);
 
-  // Initialize audio on first user interaction
+  // Initialize audio on first user interaction (must be synchronous for iOS)
   let audioInitialized = false;
-  const initAudio = async () => {
+  const initAudio = () => {
     if (audioInitialized) return;
     audioInitialized = true;
-    await soundEngine.init();
-    soundEngine.resume();
+
+    // All synchronous — no awaits — so iOS keeps the gesture context alive
+    soundEngine.init();
     if (tapHint) tapHint.classList.add('hidden');
 
-    // Start ambient if enabled
+    // Ambient can start after a small delay (context is unlocked now)
     if (ambientEngine.enabled) {
-      ambientEngine.start();
+      setTimeout(() => ambientEngine.start(), 500);
     }
 
     document.removeEventListener('click', initAudio);
     document.removeEventListener('keydown', initAudio);
     document.removeEventListener('touchstart', initAudio);
+    document.removeEventListener('touchend', initAudio);
   };
   document.addEventListener('click', initAudio);
   document.addEventListener('keydown', initAudio);
-  document.addEventListener('touchstart', initAudio, { once: true });
+  document.addEventListener('touchstart', initAudio);
+  document.addEventListener('touchend', initAudio);
 
   // Dynamic tile sizing: fill the viewport
   const resizeTiles = () => {
