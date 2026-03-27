@@ -228,4 +228,4 @@ export const THEMES = {
 };
 
 export const THEME_KEYS = Object.keys(THEMES);
-export const DEFAULT_THEME_KEYS = THEME_KEYS.filter(k => k !== 'harned');
+export const DEFAULT_THEME_KEYS = [...THEME_KEYS];
