@@ -73,7 +73,11 @@ export class SettingsPanel {
   toggle() {
     this.visible = !this.visible;
     this.panel.classList.toggle('open', this.visible);
-    if (this.visible) this._render();
+    if (this.visible) {
+      // Ensure audio is initialized when settings opens
+      if (window.__ensureAudioInit) window.__ensureAudioInit();
+      this._render();
+    }
   }
 
   _buildDOM() {
@@ -217,43 +221,39 @@ export class SettingsPanel {
 
       /* Fader (volume slider) */
       .fader {
-        margin-top: 12px;
-        margin-bottom: 4px;
+        margin-top: 10px;
+        margin-bottom: 6px;
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 0 2px;
       }
       .fader input[type="range"] {
         -webkit-appearance: none;
         appearance: none;
         flex: 1;
         height: 4px;
-        background: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.12);
         border-radius: 2px;
         outline: none;
         touch-action: none;
-        padding: 12px 0;
-        margin: -12px 0;
-        background-clip: content-box;
       }
       .fader input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 22px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
         background: #fff;
-        border-radius: 3px;
+        border-radius: 50%;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        box-shadow: 0 1px 6px rgba(0,0,0,0.4);
       }
       .fader input[type="range"]::-moz-range-thumb {
-        width: 22px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
         background: #fff;
-        border-radius: 3px;
+        border-radius: 50%;
         border: none;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        box-shadow: 0 1px 6px rgba(0,0,0,0.4);
       }
       .fader-val {
         font-size: 10px;
@@ -339,22 +339,19 @@ export class SettingsPanel {
         appearance: none;
         width: 100%;
         height: 4px;
-        background: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.12);
         border-radius: 2px;
         outline: none;
         touch-action: none;
-        padding: 12px 0;
-        margin: -12px 0;
-        background-clip: content-box;
       }
       .speed-fader input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 22px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
         background: #fff;
-        border-radius: 3px;
+        border-radius: 50%;
         cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        box-shadow: 0 1px 6px rgba(0,0,0,0.4);
       }
       .speed-fader input[type="range"]::-moz-range-thumb {
         width: 18px;
