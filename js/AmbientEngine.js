@@ -92,14 +92,16 @@ export class AmbientEngine {
     localStorage.setItem(MURMUR_KEY, String(this.murmurEnabled));
     if (this.murmurEnabled) {
       if (!this._running) {
+        // start() will handle starting the murmur since murmurEnabled is now true
         this.enabled = true;
         this._saveState();
         await this.start();
-      }
-      // start() creates _murmurGain, now safe to use it
-      if (this._running && this._murmurGain) {
-        this._murmurGain.gain.linearRampToValueAtTime(this.murmurVolume, this.soundEngine.ctx.currentTime + 2);
-        this._startCrossfadeLoop('murmur', CROWD_MURMUR_BASE64, this._murmurGain);
+      } else {
+        // Already running, just start the murmur layer
+        if (this._murmurGain) {
+          this._murmurGain.gain.linearRampToValueAtTime(this.murmurVolume, this.soundEngine.ctx.currentTime + 2);
+          this._startCrossfadeLoop('murmur', CROWD_MURMUR_BASE64, this._murmurGain);
+        }
       }
     } else if (this._running) {
       this._stopLayer('murmur');
