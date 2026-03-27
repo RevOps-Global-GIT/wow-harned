@@ -32,7 +32,7 @@
 
 .tile-front span,
 .tile-back span {
-  font-size: calc(var(--tile-size) * 0.52);
+  font-size: var(--tile-font, calc(var(--tile-size) * 0.52));
   font-weight: 700;
   color: #FFFFFF;
   text-transform: uppercase;

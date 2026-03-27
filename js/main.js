@@ -6,9 +6,9 @@ import { KeyboardController } from './KeyboardController.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { GRID_COLS, GRID_ROWS } from './constants.js';
 
-// Portrait mobile: fewer cols, more rows for a tall split-flap look
-const PORTRAIT_COLS = 12;
-const PORTRAIT_ROWS = 12;
+// Portrait mobile: fewer cols = bigger tiles/text, more rows = fills screen
+const PORTRAIT_COLS = 10;
+const PORTRAIT_ROWS = 16;
 
 function isMobilePortrait() {
   return window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
@@ -53,14 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isMobilePortrait()) {
       // Portrait: width-constrained tiles with taller aspect ratio
-      const gap = 2;
+      const gap = 1;
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
-      // Height: fill ~80% of viewport
-      const targetH = vh * 0.82;
+      // Height: fill ~95% of viewport for full-bleed feel
+      const targetH = vh * 0.95;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');
       board.boardEl.style.setProperty('--tile-gap', gap + 'px');
+      // Larger font for portrait — use 55% of tile width
+      board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
     } else {
       // Landscape / desktop: square tiles, fit both dimensions
