@@ -143,7 +143,8 @@ export class MessageRotator {
     else word = 'EVENING';
 
     const rows = this.board.rows;
-    const mid = Math.floor(rows / 2);
+    // Offset up by 1 on shorter grids (landscape) so it centers better
+    const mid = Math.floor(rows / 2) - (rows <= 10 ? 1 : 0);
     const lines = Array(rows).fill('');
     lines[mid - 2] = 'GOOD';
     lines[mid - 1] = word;

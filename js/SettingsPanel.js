@@ -132,6 +132,48 @@ export class SettingsPanel {
       }
       .sp-ambient-toggle:hover { border-color: rgba(255,255,255,0.15); }
       .sp-ambient-toggle.active { background: rgba(0,170,255,0.08); border-color: rgba(0,170,255,0.3); color: #fff; }
+
+      /* Sound cards */
+      .sp-sound-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .sp-sound-card.active {
+        border-color: rgba(0,170,255,0.2);
+        background: rgba(0,170,255,0.04);
+      }
+      .sp-sound-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+      }
+      .sp-sound-icon { display: flex; align-items: center; color: rgba(255,255,255,0.3); }
+      .sp-sound-card.active .sp-sound-icon { color: #00aaff; }
+      .sp-sound-name { flex: 1; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.4); }
+      .sp-sound-card.active .sp-sound-name { color: #fff; }
+      .sp-sound-toggle {
+        width: 36px; height: 20px; border-radius: 10px;
+        background: rgba(255,255,255,0.1); position: relative;
+        transition: background 0.2s; flex-shrink: 0;
+      }
+      .sp-sound-toggle.on { background: #00aaff; }
+      .sp-sound-toggle::after {
+        content: ''; position: absolute; top: 2px; left: 2px;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #fff; transition: transform 0.2s;
+      }
+      .sp-sound-toggle.on::after { transform: translateX(16px); }
+      .sp-sound-details { margin-top: 10px; }
+      .sp-sound-select {
+        width: 100%; padding: 7px 10px; margin-bottom: 8px;
+        background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 12px;
+        appearance: none; -webkit-appearance: none; cursor: pointer;
+      }
       .sp-ambient-icon { display: flex; align-items: center; }
       .sp-ambient-label { flex: 1; text-align: left; }
       .sp-ambient-key { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px; }
@@ -426,82 +468,90 @@ export class SettingsPanel {
   _render() {
     this.bodyEl.innerHTML = '';
 
-    // -- Sound section --
+    // -- Sound section (compact cards) --
     const soundSection = document.createElement('div');
     soundSection.className = 'sp-section';
     soundSection.innerHTML = '<div class="sp-label">Sound</div>';
 
-    // Flap click toggle + volume
+    // Helper to create a sound card
+    const makeCard = (icon, name, isOn, onToggle, extras) => {
+      const card = document.createElement('div');
+      card.className = `sp-sound-card${isOn ? ' active' : ''}`;
+
+      const header = document.createElement('div');
+      header.className = 'sp-sound-header';
+      header.innerHTML = `<span class="sp-sound-icon">${icon}</span><span class="sp-sound-name">${name}</span>`;
+      const toggle = document.createElement('div');
+      toggle.className = `sp-sound-toggle${isOn ? ' on' : ''}`;
+      header.appendChild(toggle);
+      header.addEventListener('click', onToggle);
+      card.appendChild(header);
+
+      if (isOn && extras) {
+        const details = document.createElement('div');
+        details.className = 'sp-sound-details';
+        extras(details);
+        card.appendChild(details);
+      }
+      return card;
+    };
+
+    // 1. Flap Click card
     const clickOn = this.rotator.board.soundEngine && !this.rotator.board.soundEngine.muted;
-    const clickRow = this._createToggleRow(
-      clickOn,
-      clickOn ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
-      clickOn ? 'Flap Click' : 'Flap Click Off',
-      () => { if (this.rotator.board.soundEngine) { this.rotator.board.soundEngine.toggleMute(); this._render(); } }
-    );
-    soundSection.appendChild(clickRow);
-    if (clickOn) {
-      const clickVol = this.rotator.board.soundEngine?.clickVolume || 0.8;
-      soundSection.appendChild(this._createSlider('Click Volume', Math.round(clickVol * 100) + '%', 0, 1, 0.05, clickVol, (val) => {
-        if (this.rotator.board.soundEngine) this.rotator.board.soundEngine.setClickVolume(val);
-        return Math.round(val * 100) + '%';
-      }));
-    }
-
-    // Music toggle + track selector + volume
-    const ambientOn = this.ambientEngine && this.ambientEngine.enabled;
-    const currentTrack = MUSIC_TRACK_OPTIONS.find(t => t.key === this.ambientEngine?.musicChoice);
-    const ambientRow = this._createToggleRow(
-      ambientOn,
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-      ambientOn ? (currentTrack?.label || 'Music') : 'Music Off',
-      () => { if (this.ambientEngine) { this.ambientEngine.toggle(); this._render(); } }
-    );
-    ambientRow.style.marginTop = '8px';
-    soundSection.appendChild(ambientRow);
-
-    if (ambientOn && this.ambientEngine) {
-      // Track selector
-      const selectWrap = document.createElement('div');
-      selectWrap.style.cssText = 'margin:6px 0 4px;';
-      const select = document.createElement('select');
-      select.style.cssText = 'width:100%;padding:8px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;appearance:none;-webkit-appearance:none;cursor:pointer;';
-      MUSIC_TRACK_OPTIONS.forEach(opt => {
-        const o = document.createElement('option');
-        o.value = opt.key;
-        o.textContent = opt.label;
-        if (opt.key === this.ambientEngine.musicChoice) o.selected = true;
-        select.appendChild(o);
-      });
-      select.addEventListener('change', () => { this.ambientEngine.setMusicChoice(select.value); this._render(); });
-      selectWrap.appendChild(select);
-      soundSection.appendChild(selectWrap);
-
-      // Music volume
-      soundSection.appendChild(this._createSlider('Music Volume', Math.round(this.ambientEngine.volume * 100) + '%', 0, 1, 0.05, this.ambientEngine.volume, (val) => {
-        this.ambientEngine.setVolume(val);
-        return Math.round(val * 100) + '%';
-      }));
-    }
-
-    // Murmur toggle + volume
-    if (this.ambientEngine) {
-      const murmurOn = this.ambientEngine.murmurEnabled;
-      const murmurRow = this._createToggleRow(
-        murmurOn,
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-        murmurOn ? 'Crowd Murmur' : 'Crowd Off',
-        () => { this.ambientEngine.toggleMurmur(); this._render(); }
-      );
-      murmurRow.style.marginTop = '8px';
-      soundSection.appendChild(murmurRow);
-
-      if (murmurOn) {
-        soundSection.appendChild(this._createSlider('Murmur Volume', Math.round(this.ambientEngine.murmurVolume * 100) + '%', 0, 1, 0.05, this.ambientEngine.murmurVolume, (val) => {
-          this.ambientEngine.setMurmurVolume(val);
-          return Math.round(val * 100) + '%';
+    soundSection.appendChild(makeCard(
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+      'Flap Click', clickOn,
+      () => { if (this.rotator.board.soundEngine) { this.rotator.board.soundEngine.toggleMute(); this._render(); } },
+      (el) => {
+        const vol = this.rotator.board.soundEngine?.clickVolume || 0.8;
+        el.appendChild(this._createSlider('', Math.round(vol * 100) + '%', 0, 1, 0.05, vol, (v) => {
+          if (this.rotator.board.soundEngine) this.rotator.board.soundEngine.setClickVolume(v);
+          return Math.round(v * 100) + '%';
         }));
       }
+    ));
+
+    // 2. Music card
+    const ambientOn = this.ambientEngine && this.ambientEngine.enabled;
+    const trackLabel = MUSIC_TRACK_OPTIONS.find(t => t.key === this.ambientEngine?.musicChoice)?.label || 'Music';
+    soundSection.appendChild(makeCard(
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+      'Music', ambientOn,
+      () => { if (this.ambientEngine) { this.ambientEngine.toggle(); this._render(); } },
+      (el) => {
+        // Track selector
+        const select = document.createElement('select');
+        select.className = 'sp-sound-select';
+        MUSIC_TRACK_OPTIONS.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.key; o.textContent = opt.label;
+          if (opt.key === this.ambientEngine.musicChoice) o.selected = true;
+          select.appendChild(o);
+        });
+        select.addEventListener('change', () => { this.ambientEngine.setMusicChoice(select.value); this._render(); });
+        el.appendChild(select);
+        // Volume
+        el.appendChild(this._createSlider('', Math.round(this.ambientEngine.volume * 100) + '%', 0, 1, 0.05, this.ambientEngine.volume, (v) => {
+          this.ambientEngine.setVolume(v);
+          return Math.round(v * 100) + '%';
+        }));
+      }
+    ));
+
+    // 3. Crowd card
+    if (this.ambientEngine) {
+      const murmurOn = this.ambientEngine.murmurEnabled;
+      soundSection.appendChild(makeCard(
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        'Crowd', murmurOn,
+        () => { this.ambientEngine.toggleMurmur(); this._render(); },
+        (el) => {
+          el.appendChild(this._createSlider('', Math.round(this.ambientEngine.murmurVolume * 100) + '%', 0, 1, 0.05, this.ambientEngine.murmurVolume, (v) => {
+            this.ambientEngine.setMurmurVolume(v);
+            return Math.round(v * 100) + '%';
+          }));
+        }
+      ));
     }
 
     this.bodyEl.appendChild(soundSection);
