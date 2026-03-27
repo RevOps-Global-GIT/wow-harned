@@ -25,19 +25,33 @@ export class SoundEngine {
 
   async init() {
     if (this._initialized) return;
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this._initialized = true;
 
-    // Decode the embedded audio clip
     try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Resume immediately within user gesture (required on iOS)
+      if (this.ctx.state === 'suspended') {
+        await this.ctx.resume();
+      }
+
+      // Play a silent buffer to fully unlock iOS audio
+      const silentBuffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+      const silentSource = this.ctx.createBufferSource();
+      silentSource.buffer = silentBuffer;
+      silentSource.connect(this.ctx.destination);
+      silentSource.start();
+
+      // Decode the embedded audio clip
       const binaryStr = atob(FLAP_AUDIO_BASE64);
       const bytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
         bytes[i] = binaryStr.charCodeAt(i);
       }
-      this._audioBuffer = await this.ctx.decodeAudioData(bytes.buffer);
+      // Use copy of buffer since decodeAudioData detaches the original
+      this._audioBuffer = await this.ctx.decodeAudioData(bytes.buffer.slice(0));
     } catch (e) {
-      console.warn('Failed to decode flap audio:', e);
+      console.warn('Audio init failed:', e);
     }
   }
 

@@ -45,9 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.removeEventListener('click', initAudio);
     document.removeEventListener('keydown', initAudio);
+    document.removeEventListener('touchstart', initAudio);
   };
   document.addEventListener('click', initAudio);
   document.addEventListener('keydown', initAudio);
+  document.addEventListener('touchstart', initAudio, { once: true });
 
   // Dynamic tile sizing: fill the viewport
   const resizeTiles = () => {
