@@ -6,6 +6,9 @@ import { MUSIC_TRACK_OPTIONS } from './AmbientEngine.js';
 const STORAGE_KEY = 'flipoff_messages';
 const EDITS_KEY = 'flipoff_theme_edits';
 
+// Theme tile colors - cycle through these
+const TILE_COLORS = ['#00aaff', '#FF4D00', '#AA00FF', '#FFCC00', '#00FFCC'];
+
 export class SettingsPanel {
   constructor(rotator, ambientEngine) {
     this.rotator = rotator;
@@ -78,7 +81,7 @@ export class SettingsPanel {
     this.panel.className = 'settings-panel';
     this.panel.innerHTML = `
       <div class="sp-header">
-        <span class="sp-title">Settings</span>
+        <div class="sp-handle"></div>
         <button class="sp-close" title="Close (S)">&times;</button>
       </div>
       <div class="sp-body"></div>
@@ -90,216 +93,541 @@ export class SettingsPanel {
 
     const style = document.createElement('style');
     style.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600&display=swap');
+
       .settings-panel {
         position: fixed;
         top: 0;
         right: -400px;
         width: 380px;
         height: 100vh;
-        background: #1a1a1a;
-        border-left: 1px solid rgba(255,255,255,0.08);
+        background: #111;
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         transition: right 0.25s ease;
         overflow: hidden;
       }
       .settings-panel.open { right: 0; }
+
       .sp-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        justify-content: flex-end;
+        padding: 12px 20px 8px;
         flex-shrink: 0;
         position: relative;
       }
-      .sp-title { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
-      .sp-close { background: none; color: rgba(255,255,255,0.4); font-size: 22px; padding: 0 4px; cursor: pointer; line-height: 1; }
+      .sp-handle {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 2px;
+        display: none;
+      }
+      .sp-close {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 22px;
+        padding: 0 4px;
+        cursor: pointer;
+        line-height: 1;
+      }
       .sp-close:hover { color: #fff; }
-      .sp-body { flex: 1; overflow-y: auto; padding: 16px; }
-      .sp-body::-webkit-scrollbar { width: 4px; }
-      .sp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-      .sp-section { margin-bottom: 20px; }
-      .sp-label { color: rgba(255,255,255,0.35); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-      .sp-ambient-row { display: flex; }
-      .sp-ambient-toggle {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 12px 14px; background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-        color: rgba(255,255,255,0.4); font-size: 13px; cursor: pointer; transition: all 0.15s;
-      }
-      .sp-ambient-toggle:hover { border-color: rgba(255,255,255,0.15); }
-      .sp-ambient-toggle.active { background: rgba(0,170,255,0.08); border-color: rgba(0,170,255,0.3); color: #fff; }
 
-      /* Sound cards */
-      .sp-sound-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 10px;
-        padding: 12px 14px;
-        margin-bottom: 8px;
+      .sp-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 20px 40px;
+        -webkit-overflow-scrolling: touch;
       }
-      .sp-sound-card.active {
-        border-color: rgba(0,170,255,0.2);
-        background: rgba(0,170,255,0.04);
+      .sp-body::-webkit-scrollbar { width: 0; }
+
+      /* Section labels - mechanical label tape */
+      .section-label {
+        font-family: 'Archivo Black', sans-serif;
+        font-size: 9px;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.2);
+        margin: 24px 0 14px;
+        padding-left: 2px;
       }
-      .sp-sound-header {
+      .section-label:first-child { margin-top: 8px; }
+
+      /* Split line */
+      .split-line {
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 20%, rgba(255,255,255,0.06) 80%, transparent 100%);
+        margin: 20px 0;
+      }
+
+      /* ===== SOUND MIXER ===== */
+      .mixer {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .channel {
         display: flex;
         align-items: center;
-        gap: 10px;
-        cursor: pointer;
+        gap: 12px;
+        padding: 14px 0;
+        position: relative;
       }
-      .sp-sound-icon { display: flex; align-items: center; color: rgba(255,255,255,0.3); }
-      .sp-sound-card.active .sp-sound-icon { color: #00aaff; }
-      .sp-sound-name { flex: 1; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.4); }
-      .sp-sound-card.active .sp-sound-name { color: #fff; }
-      .sp-sound-toggle {
-        width: 36px; height: 20px; border-radius: 10px;
-        background: rgba(255,255,255,0.1); position: relative;
-        transition: background 0.2s; flex-shrink: 0;
+      .channel + .channel {
+        border-top: 1px solid rgba(255,255,255,0.04);
       }
-      .sp-sound-toggle.on { background: #00aaff; }
-      .sp-sound-toggle::after {
-        content: ''; position: absolute; top: 2px; left: 2px;
-        width: 16px; height: 16px; border-radius: 50%;
-        background: #fff; transition: transform 0.2s;
-      }
-      .sp-sound-toggle.on::after { transform: translateX(16px); }
-      .sp-sound-details { margin-top: 10px; }
-      .sp-sound-select {
-        width: 100%; padding: 7px 10px; margin-bottom: 8px;
-        background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 12px;
-        appearance: none; -webkit-appearance: none; cursor: pointer;
-      }
-      .sp-ambient-icon { display: flex; align-items: center; }
-      .sp-ambient-label { flex: 1; text-align: left; }
-      .sp-ambient-key { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 3px; }
-      .sp-slider-row { margin-bottom: 14px; }
-      .sp-slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-      .sp-slider-name { color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 500; }
-      .sp-slider-value { color: rgba(255,255,255,0.3); font-size: 11px; font-weight: 600; min-width: 50px; text-align: right; }
-      .sp-slider input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; outline: none; cursor: pointer; }
-      .sp-slider input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: #fff; border-radius: 50%; cursor: pointer; }
-      .sp-slider input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: #fff; border-radius: 50%; border: none; cursor: pointer; }
-      .sp-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0; }
-      .sp-stats { color: rgba(255,255,255,0.2); font-size: 11px; text-align: center; padding: 8px 0 4px; }
 
-      /* Tab bar */
-      .sp-tabs {
+      .channel-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+      .channel-icon svg { width: 16px; height: 16px; }
+      .channel-icon.off { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.2); }
+      .channel-icon.on-blue { background: rgba(0,170,255,0.15); color: #00aaff; }
+      .channel-icon.on-cyan { background: rgba(0,255,204,0.12); color: #00ffcc; }
+      .channel-icon.on-purple { background: rgba(170,0,255,0.15); color: #aa00ff; }
+
+      .channel-body { flex: 1; min-width: 0; }
+      .channel-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 2px;
+      }
+      .channel.off .channel-name { color: rgba(255,255,255,0.3); }
+      .channel-sub {
+        font-size: 11px;
+        color: rgba(255,255,255,0.25);
+      }
+
+      /* Fader (volume slider) */
+      .fader {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .fader input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 1;
+        height: 3px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 1.5px;
+        outline: none;
+      }
+      .fader input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 12px;
+        background: #fff;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      }
+      .fader input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 12px;
+        background: #fff;
+        border-radius: 2px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      }
+      .fader-val {
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.3);
+        width: 28px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Track selector chips */
+      .track-select {
+        margin-top: 6px;
+        display: flex;
+        gap: 6px;
         flex-wrap: wrap;
-        gap: 4px;
-        margin: 0 0 12px;
+      }
+      .track-chip {
+        padding: 5px 10px;
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.35);
+        background: rgba(255,255,255,0.04);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+        letter-spacing: 0.2px;
+        border: none;
+      }
+      .track-chip:hover { color: rgba(255,255,255,0.6); }
+      .track-chip.active {
+        color: #fff;
+        background: rgba(0,170,255,0.15);
+      }
+
+      /* Toggle knob */
+      .knob {
+        width: 40px;
+        height: 22px;
+        border-radius: 11px;
+        background: rgba(255,255,255,0.06);
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+      .knob::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        transition: all 0.2s;
+      }
+      .knob.on { background: rgba(0,170,255,0.3); }
+      .knob.on::after {
+        transform: translateX(18px);
+        background: #00aaff;
+        box-shadow: 0 0 8px rgba(0,170,255,0.4);
+      }
+
+      /* ===== SPEED / TEMPO ===== */
+      .speed-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 0;
+      }
+      .speed-label {
+        font-size: 11px;
+        color: rgba(255,255,255,0.25);
+        font-weight: 500;
+        width: 48px;
         flex-shrink: 0;
       }
-      .sp-tab {
-        padding: 6px 10px;
-        color: rgba(255,255,255,0.45);
+      .speed-label.right { text-align: right; }
+      .speed-fader { flex: 1; }
+      .speed-fader input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 3px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 1.5px;
+        outline: none;
+      }
+      .speed-fader input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 12px;
+        background: #fff;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      }
+      .speed-fader input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 12px;
+        background: #fff;
+        border-radius: 2px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      }
+      .speed-current {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.5);
+        text-align: center;
+        margin-top: 6px;
+      }
+
+      /* ===== FAMILY ===== */
+      .family-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+      }
+      .family-info { flex: 1; }
+      .family-label { font-size: 13px; font-weight: 600; color: #fff; }
+      .family-count { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+
+      /* ===== THEME GRID ===== */
+      .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+
+      .theme-tile {
+        padding: 10px 8px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border: none;
+      }
+      .theme-tile:hover { background: rgba(255,255,255,0.06); }
+      .theme-tile.active {
+        background: rgba(0,170,255,0.08);
+      }
+      .theme-tile.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--tile-color, #00aaff);
+      }
+
+      .theme-name {
         font-size: 11px;
         font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 16px;
-        transition: all 0.15s;
-        background: rgba(255,255,255,0.03);
+        color: rgba(255,255,255,0.5);
+        line-height: 1.3;
       }
-      .sp-tab:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
-      .sp-tab.active { color: #fff; border-color: rgba(0,170,255,0.4); background: rgba(0,170,255,0.1); }
-      .sp-tab .sp-tab-count {
-        color: rgba(255,255,255,0.2);
-        font-size: 10px;
-        margin-left: 3px;
-      }
-      .sp-tab.active .sp-tab-count { color: rgba(255,255,255,0.4); }
+      .theme-tile.active .theme-name { color: #fff; }
+      .theme-tile.off .theme-name { color: rgba(255,255,255,0.2); }
 
-      /* Quote cards */
-      .sp-quote {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 8px;
-        padding: 10px 12px;
+      .theme-count {
+        font-size: 9px;
+        color: rgba(255,255,255,0.15);
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+      .theme-tile.active .theme-count { color: rgba(255,255,255,0.35); }
+
+      .theme-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #00aaff;
+        display: inline-block;
+        margin-left: 3px;
+        vertical-align: middle;
+      }
+
+      /* ===== QUOTE AREA ===== */
+      .quote-area { margin-top: 16px; }
+
+      .rotation-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
         margin-bottom: 8px;
       }
-      .sp-quote-text {
-        color: rgba(255,255,255,0.7);
+      .rotation-label {
         font-size: 12px;
-        line-height: 1.5;
-        margin-bottom: 6px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.5);
       }
-      .sp-quote-attr {
-        color: rgba(255,255,255,0.3);
-        font-size: 11px;
-        font-style: italic;
+
+      /* Swipeable quote container */
+      .quote-swipe {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
       }
-      .sp-quote-actions {
+      .quote-swipe + .quote-swipe {
+        border-top: 1px solid rgba(255,255,255,0.04);
+      }
+
+      .quote-action-left,
+      .quote-action-right {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 80px;
         display: flex;
-        gap: 8px;
-        margin-top: 8px;
-        justify-content: flex-end;
-      }
-      .sp-quote-btn {
-        background: none;
-        color: rgba(255,255,255,0.25);
+        align-items: center;
+        justify-content: center;
+        color: #fff;
         font-size: 11px;
-        cursor: pointer;
-        padding: 3px 8px;
-        border-radius: 4px;
-        transition: all 0.15s;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        flex-direction: column;
+        gap: 4px;
       }
-      .sp-quote-btn:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); }
-      .sp-quote-btn.delete:hover { color: #ff4444; background: rgba(255,68,68,0.1); }
-      .sp-quote-btn.share:hover { color: #00aaff; background: rgba(0,170,255,0.1); }
+      .quote-action-left {
+        right: 0;
+        background: #ff4466;
+      }
+      .quote-action-left svg { width: 18px; height: 18px; }
+      .quote-action-right {
+        left: 0;
+        background: #00aaff;
+      }
+      .quote-action-right svg { width: 18px; height: 18px; }
+
+      .quote-inner {
+        position: relative;
+        background: #111;
+        z-index: 1;
+        transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        padding: 12px 16px;
+        cursor: pointer;
+        touch-action: pan-y;
+      }
+
+      .quote-text {
+        font-size: 12px;
+        line-height: 1.6;
+        color: rgba(255,255,255,0.6);
+        font-weight: 400;
+      }
+      .quote-attr {
+        font-size: 11px;
+        color: rgba(255,255,255,0.2);
+        margin-top: 4px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+      }
 
       /* Edit mode */
-      .sp-quote textarea {
-        width: 100%; background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
-        color: #fff; font-family: 'SF Mono', 'Fira Code', monospace;
-        font-size: 12px; line-height: 1.6; padding: 8px 10px;
-        resize: none; box-sizing: border-box;
+      .quote-edit-mode {
+        padding: 12px 0;
       }
-      .sp-quote textarea:focus { outline: none; border-color: rgba(255,255,255,0.2); }
-      .sp-quote .sp-hint { color: rgba(255,255,255,0.2); font-size: 10px; margin-top: 4px; text-align: right; }
+      .quote-edit-mode textarea {
+        width: 100%;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        color: #fff;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        line-height: 1.6;
+        padding: 12px;
+        resize: none;
+        box-sizing: border-box;
+      }
+      .quote-edit-mode textarea:focus {
+        outline: none;
+        border-color: rgba(0,170,255,0.3);
+      }
+      .quote-edit-hint {
+        font-size: 10px;
+        color: rgba(255,255,255,0.15);
+        margin-top: 4px;
+      }
+      .quote-edit-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        justify-content: flex-end;
+      }
+      .quote-edit-cancel {
+        padding: 8px 16px;
+        border-radius: 6px;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .quote-edit-save {
+        padding: 8px 20px;
+        border-radius: 6px;
+        background: rgba(0,170,255,0.15);
+        border: none;
+        color: #00aaff;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .quote-edit-save:hover { background: rgba(0,170,255,0.25); }
 
-      /* Add button */
-      .sp-add-quote {
-        width: 100%; padding: 10px;
-        background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.1);
-        border-radius: 8px; color: rgba(255,255,255,0.3);
-        font-size: 12px; font-weight: 600; cursor: pointer;
-        transition: all 0.15s; margin-top: 8px;
+      .add-quote-btn {
+        width: 100%;
+        padding: 12px;
+        margin-top: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: rgba(255,255,255,0.2);
+        background: none;
+        border: 1px dashed rgba(255,255,255,0.06);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-transform: uppercase;
       }
-      .sp-add-quote:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
+      .add-quote-btn:hover {
+        color: rgba(255,255,255,0.5);
+        border-color: rgba(255,255,255,0.15);
+      }
 
       /* Reset */
       .sp-reset-theme {
-        padding: 8px 14px; background: none;
-        border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
-        color: rgba(255,255,255,0.3); font-size: 11px; cursor: pointer; margin-top: 8px;
+        padding: 8px 14px;
+        background: none;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px;
+        color: rgba(255,255,255,0.3);
+        font-size: 11px;
+        cursor: pointer;
+        margin-top: 8px;
       }
       .sp-reset-theme:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
+
+      /* Stats footer */
+      .sp-stats {
+        text-align: center;
+        padding: 20px 0 8px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: rgba(255,255,255,0.1);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
 
       /* Bottom sheet for mobile portrait */
       @media (max-width: 600px) and (orientation: portrait) {
         .settings-panel {
-          top: auto; bottom: 0; left: 0; right: 0;
-          width: 100%; height: 80vh;
-          border-left: none; border-top: 1px solid rgba(255,255,255,0.08);
-          border-radius: 16px 16px 0 0;
+          top: auto;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 78vh;
+          border-radius: 20px 20px 0 0;
           transform: translateY(100%);
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .settings-panel.open { right: 0; transform: translateY(0); }
-        .sp-header { padding: 12px 20px; }
-        .sp-header::before {
-          content: ''; position: absolute; top: 8px; left: 50%;
-          transform: translateX(-50%); width: 36px; height: 4px;
-          background: rgba(255,255,255,0.2); border-radius: 2px;
+        .settings-panel.open {
+          right: 0;
+          transform: translateY(0);
         }
+        .sp-handle { display: block; }
+        .sp-header { padding: 12px 20px 8px; }
       }
     `;
     document.head.appendChild(style);
@@ -326,30 +654,6 @@ export class SettingsPanel {
     document.body.addEventListener('dblclick', (e) => { if (!this.visible) this.toggle(); });
   }
 
-  _createSlider(label, displayValue, min, max, step, value, onChange) {
-    const row = document.createElement('div');
-    row.className = 'sp-slider-row';
-    const header = document.createElement('div');
-    header.className = 'sp-slider-header';
-    const name = document.createElement('span');
-    name.className = 'sp-slider-name';
-    name.textContent = label;
-    const valEl = document.createElement('span');
-    valEl.className = 'sp-slider-value';
-    valEl.textContent = displayValue;
-    header.appendChild(name);
-    header.appendChild(valEl);
-    const slider = document.createElement('div');
-    slider.className = 'sp-slider';
-    const input = document.createElement('input');
-    input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = value;
-    input.addEventListener('input', () => { valEl.textContent = onChange(parseFloat(input.value)); });
-    slider.appendChild(input);
-    row.appendChild(header);
-    row.appendChild(slider);
-    return row;
-  }
-
   // Extract readable quote text from a message array
   _quotePreview(msg) {
     const lines = msg.filter(l => l && l.trim());
@@ -358,92 +662,195 @@ export class SettingsPanel {
     return { body, attr: attr ? attr.trim() : '' };
   }
 
+  // Convert natural text back into grid format
+  _naturalTextToGrid(text, author) {
+    let fullText = text.trim().toUpperCase();
+    if (author && author.trim()) {
+      // Ensure author starts with dash
+      let authorText = author.trim();
+      if (!authorText.startsWith('-')) authorText = '- ' + authorText;
+      authorText = authorText.toUpperCase();
+      // We'll add author as separate lines
+      fullText = fullText + '\n' + authorText;
+    }
+
+    // Word-wrap to GRID_COLS
+    const words = fullText.split(/\s+/);
+    const wrappedLines = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      if (word === '\n' || fullText.includes('\n')) {
+        // Handle explicit newlines - split on them first
+        break;
+      }
+      if (currentLine.length === 0) {
+        currentLine = word;
+      } else if ((currentLine + ' ' + word).length <= GRID_COLS) {
+        currentLine += ' ' + word;
+      } else {
+        wrappedLines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) wrappedLines.push(currentLine);
+
+    // Re-do with proper newline handling
+    const inputLines = fullText.split('\n');
+    const result = [];
+    for (const inputLine of inputLines) {
+      const lineWords = inputLine.trim().split(/\s+/).filter(w => w);
+      let cur = '';
+      for (const word of lineWords) {
+        if (cur.length === 0) {
+          cur = word;
+        } else if ((cur + ' ' + word).length <= GRID_COLS) {
+          cur += ' ' + word;
+        } else {
+          result.push(cur);
+          cur = word;
+        }
+      }
+      if (cur) result.push(cur);
+    }
+
+    // Pad to GRID_ROWS, centering vertically with empty line at top
+    const lines = ['', ...result];
+    while (lines.length < GRID_ROWS) lines.push('');
+    return lines.slice(0, GRID_ROWS);
+  }
+
+  // Convert grid format to natural readable text
+  _gridToNaturalText(msg) {
+    const lines = msg.filter(l => l && l.trim());
+    const bodyLines = lines.filter(l => !l.trim().startsWith('-'));
+    const attrLine = lines.find(l => l.trim().startsWith('-'));
+
+    // Join body lines into flowing text, capitalize naturally
+    const rawBody = bodyLines.map(l => l.trim()).join(' ');
+    // Sentence case: first letter upper, rest lower
+    const body = rawBody.charAt(0).toUpperCase() + rawBody.slice(1).toLowerCase();
+
+    let author = '';
+    if (attrLine) {
+      const raw = attrLine.trim().replace(/^-\s*/, '');
+      // Title case the author name
+      author = '- ' + raw.split(' ').map(w =>
+        w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      ).join(' ');
+    }
+
+    return { body, author };
+  }
+
+  _setupSwipeGesture(swipeContainer, innerEl, onEdit, onDelete) {
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let isSnapped = false;
+    let snapDirection = 0; // -1 left, 0 center, 1 right
+
+    innerEl.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      currentX = 0;
+      isDragging = true;
+      innerEl.style.transition = 'none';
+    }, { passive: true });
+
+    innerEl.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.touches[0].clientX - startX;
+
+      // If snapped, adjust from snap position
+      if (isSnapped) {
+        currentX = (snapDirection * 80) + deltaX;
+      } else {
+        currentX = deltaX;
+      }
+
+      // Clamp between -80 and 80
+      currentX = Math.max(-80, Math.min(80, currentX));
+      innerEl.style.transform = `translateX(${currentX}px)`;
+    }, { passive: true });
+
+    innerEl.addEventListener('touchend', () => {
+      isDragging = false;
+      innerEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+
+      const absX = Math.abs(currentX);
+
+      if (absX > 40) {
+        // Snap open
+        const dir = currentX > 0 ? 1 : -1;
+        snapDirection = dir;
+        isSnapped = true;
+        innerEl.style.transform = `translateX(${dir * 80}px)`;
+      } else {
+        // Snap back
+        snapDirection = 0;
+        isSnapped = false;
+        innerEl.style.transform = 'translateX(0)';
+      }
+    }, { passive: true });
+
+    // Clicking on action buttons
+    const editAction = swipeContainer.querySelector('.quote-action-right');
+    const deleteAction = swipeContainer.querySelector('.quote-action-left');
+
+    if (editAction) {
+      editAction.addEventListener('click', () => {
+        onEdit();
+      });
+    }
+    if (deleteAction) {
+      deleteAction.addEventListener('click', () => {
+        onDelete();
+      });
+    }
+  }
+
   _renderQuoteCard(msg, index, themeKey, messages) {
-    const card = document.createElement('div');
-    card.className = 'sp-quote';
+    const swipeContainer = document.createElement('div');
+    swipeContainer.className = 'quote-swipe';
+
     const { body, attr } = this._quotePreview(msg);
 
-    // Display mode (default)
+    // Edit action (right side, revealed on swipe right)
+    const editAction = document.createElement('div');
+    editAction.className = 'quote-action-right';
+    editAction.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit';
+
+    // Delete action (left side, revealed on swipe left)
+    const deleteAction = document.createElement('div');
+    deleteAction.className = 'quote-action-left';
+    deleteAction.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete';
+
+    swipeContainer.appendChild(editAction);
+    swipeContainer.appendChild(deleteAction);
+
+    // Inner content that slides
+    const inner = document.createElement('div');
+    inner.className = 'quote-inner';
+
     const textEl = document.createElement('div');
-    textEl.className = 'sp-quote-text';
+    textEl.className = 'quote-text';
     textEl.textContent = body;
-    card.appendChild(textEl);
+    inner.appendChild(textEl);
 
     if (attr) {
       const attrEl = document.createElement('div');
-      attrEl.className = 'sp-quote-attr';
+      attrEl.className = 'quote-attr';
       attrEl.textContent = attr;
-      card.appendChild(attrEl);
+      inner.appendChild(attrEl);
     }
 
-    const actions = document.createElement('div');
-    actions.className = 'sp-quote-actions';
+    swipeContainer.appendChild(inner);
 
-    // Edit button
-    const editBtn = document.createElement('button');
-    editBtn.className = 'sp-quote-btn';
-    editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', () => {
-      card.innerHTML = '';
-      const textarea = document.createElement('textarea');
-      textarea.rows = GRID_ROWS;
-      textarea.value = msg.join('\n');
-      textarea.spellcheck = false;
-      card.appendChild(textarea);
-
-      const hint = document.createElement('div');
-      hint.className = 'sp-hint';
-      hint.textContent = `${GRID_ROWS} rows, ${GRID_COLS} chars max`;
-      card.appendChild(hint);
-
-      const saveRow = document.createElement('div');
-      saveRow.className = 'sp-quote-actions';
-      const saveBtn = document.createElement('button');
-      saveBtn.className = 'sp-quote-btn';
-      saveBtn.textContent = 'Save';
-      saveBtn.style.color = '#00aaff';
-      saveBtn.addEventListener('click', () => {
-        const lines = textarea.value.split('\n');
-        while (lines.length < GRID_ROWS) lines.push('');
-        messages[index] = lines.slice(0, GRID_ROWS);
-        if (themeKey === 'my-quotes') {
-          this._saveCustom();
-        } else {
-          this._setThemeMessages(themeKey, messages);
-        }
-        this._render();
-      });
-      const cancelBtn = document.createElement('button');
-      cancelBtn.className = 'sp-quote-btn';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.addEventListener('click', () => this._render());
-      saveRow.appendChild(cancelBtn);
-      saveRow.appendChild(saveBtn);
-      card.appendChild(saveRow);
-      textarea.focus();
-    });
-    actions.appendChild(editBtn);
-
-    // Share button
-    const shareBtn = document.createElement('button');
-    shareBtn.className = 'sp-quote-btn share';
-    shareBtn.textContent = 'Share';
-    shareBtn.addEventListener('click', async () => {
-      const name = prompt('Your name (so family knows who shared it):');
-      if (!name) return;
-      shareBtn.textContent = '...';
-      const ok = await shareMessage(msg, name);
-      shareBtn.textContent = ok ? 'Shared!' : 'Failed';
-      if (ok) this.rotator._loadShared();
-      setTimeout(() => { shareBtn.textContent = 'Share'; }, 2000);
-    });
-    actions.appendChild(shareBtn);
-
-    // Delete button
-    const delBtn = document.createElement('button');
-    delBtn.className = 'sp-quote-btn delete';
-    delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', () => {
+    // Set up swipe gestures
+    const onEdit = () => {
+      this._enterEditMode(swipeContainer, msg, index, themeKey, messages);
+    };
+    const onDelete = () => {
       if (messages.length <= 1) return;
       messages.splice(index, 1);
       if (themeKey === 'my-quotes') {
@@ -452,183 +859,309 @@ export class SettingsPanel {
         this._setThemeMessages(themeKey, messages);
       }
       this._render();
-    });
-    actions.appendChild(delBtn);
+    };
 
-    card.appendChild(actions);
-    return card;
+    this._setupSwipeGesture(swipeContainer, inner, onEdit, onDelete);
+
+    return swipeContainer;
+  }
+
+  _enterEditMode(container, msg, index, themeKey, messages) {
+    const { body, author } = this._gridToNaturalText(msg);
+
+    // Replace the swipe container content with edit mode
+    container.innerHTML = '';
+    container.className = 'quote-edit-mode';
+
+    const bodyTextarea = document.createElement('textarea');
+    bodyTextarea.rows = 3;
+    bodyTextarea.placeholder = 'Type your quote naturally...';
+    bodyTextarea.value = body;
+    container.appendChild(bodyTextarea);
+
+    const hint = document.createElement('div');
+    hint.className = 'quote-edit-hint';
+    hint.textContent = 'Separate author with a dash on a new line';
+    container.appendChild(hint);
+
+    const authorTextarea = document.createElement('textarea');
+    authorTextarea.rows = 1;
+    authorTextarea.placeholder = '- Author name';
+    authorTextarea.value = author;
+    authorTextarea.style.marginTop = '6px';
+    authorTextarea.style.fontStyle = 'italic';
+    authorTextarea.style.color = 'rgba(255,255,255,0.5)';
+    container.appendChild(authorTextarea);
+
+    const actions = document.createElement('div');
+    actions.className = 'quote-edit-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'quote-edit-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => this._render());
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'quote-edit-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      const newLines = this._naturalTextToGrid(bodyTextarea.value, authorTextarea.value);
+      messages[index] = newLines;
+      if (themeKey === 'my-quotes') {
+        this._saveCustom();
+      } else {
+        this._setThemeMessages(themeKey, messages);
+      }
+      this._render();
+    });
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    container.appendChild(actions);
+
+    bodyTextarea.focus();
   }
 
   _render() {
     this.bodyEl.innerHTML = '';
 
-    // -- Sound section (compact cards) --
-    const soundSection = document.createElement('div');
-    soundSection.className = 'sp-section';
-    soundSection.innerHTML = '<div class="sp-label">Sound</div>';
+    // ===== SOUND MIXER =====
+    const soundLabel = document.createElement('div');
+    soundLabel.className = 'section-label';
+    soundLabel.textContent = 'Sound';
+    this.bodyEl.appendChild(soundLabel);
 
-    // Helper to create a sound card
-    const makeCard = (icon, name, isOn, onToggle, extras) => {
-      const card = document.createElement('div');
-      card.className = `sp-sound-card${isOn ? ' active' : ''}`;
+    const mixer = document.createElement('div');
+    mixer.className = 'mixer';
 
-      const header = document.createElement('div');
-      header.className = 'sp-sound-header';
-      header.innerHTML = `<span class="sp-sound-icon">${icon}</span><span class="sp-sound-name">${name}</span>`;
-      const toggle = document.createElement('div');
-      toggle.className = `sp-sound-toggle${isOn ? ' on' : ''}`;
-      header.appendChild(toggle);
-      header.addEventListener('click', onToggle);
-      card.appendChild(header);
-
-      if (isOn && extras) {
-        const details = document.createElement('div');
-        details.className = 'sp-sound-details';
-        extras(details);
-        card.appendChild(details);
-      }
-      return card;
-    };
-
-    // 1. Flap Click card
+    // 1. Flap Click channel
     const clickOn = this.rotator.board.soundEngine && !this.rotator.board.soundEngine.muted;
-    soundSection.appendChild(makeCard(
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
-      'Flap Click', clickOn,
-      () => { if (this.rotator.board.soundEngine) { this.rotator.board.soundEngine.toggleMute(); this._render(); } },
-      (el) => {
+    mixer.appendChild(this._renderChannel({
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+      iconClass: clickOn ? 'on-blue' : 'off',
+      name: 'Flap Click',
+      isOn: clickOn,
+      isOff: !clickOn,
+      onToggle: () => {
+        if (this.rotator.board.soundEngine) {
+          this.rotator.board.soundEngine.toggleMute();
+          this._render();
+        }
+      },
+      renderBody: (bodyEl) => {
+        if (!clickOn) return;
         const vol = this.rotator.board.soundEngine?.clickVolume || 0.8;
-        el.appendChild(this._createSlider('', Math.round(vol * 100) + '%', 0, 1, 0.05, vol, (v) => {
+        this._appendFader(bodyEl, vol, (v) => {
           if (this.rotator.board.soundEngine) this.rotator.board.soundEngine.setClickVolume(v);
-          return Math.round(v * 100) + '%';
-        }));
-      }
-    ));
-
-    // 2. Music card
-    const ambientOn = this.ambientEngine && this.ambientEngine.enabled;
-    const trackLabel = MUSIC_TRACK_OPTIONS.find(t => t.key === this.ambientEngine?.musicChoice)?.label || 'Music';
-    soundSection.appendChild(makeCard(
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-      'Music', ambientOn,
-      () => { if (this.ambientEngine) { this.ambientEngine.toggle(); this._render(); } },
-      (el) => {
-        // Track selector
-        const select = document.createElement('select');
-        select.className = 'sp-sound-select';
-        MUSIC_TRACK_OPTIONS.forEach(opt => {
-          const o = document.createElement('option');
-          o.value = opt.key; o.textContent = opt.label;
-          if (opt.key === this.ambientEngine.musicChoice) o.selected = true;
-          select.appendChild(o);
         });
-        select.addEventListener('change', () => { this.ambientEngine.setMusicChoice(select.value); this._render(); });
-        el.appendChild(select);
-        // Volume
-        el.appendChild(this._createSlider('', Math.round(this.ambientEngine.volume * 100) + '%', 0, 1, 0.05, this.ambientEngine.volume, (v) => {
-          this.ambientEngine.setVolume(v);
-          return Math.round(v * 100) + '%';
-        }));
       }
-    ));
+    }));
 
-    // 3. Crowd card
+    // 2. Music channel
+    const ambientOn = this.ambientEngine && this.ambientEngine.enabled;
+    mixer.appendChild(this._renderChannel({
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+      iconClass: ambientOn ? 'on-cyan' : 'off',
+      name: 'Music',
+      isOn: ambientOn,
+      isOff: !ambientOn,
+      onToggle: () => {
+        if (this.ambientEngine) {
+          this.ambientEngine.toggle();
+          this._render();
+        }
+      },
+      renderBody: (bodyEl) => {
+        if (!ambientOn) return;
+        // Track chips
+        const trackSelect = document.createElement('div');
+        trackSelect.className = 'track-select';
+        MUSIC_TRACK_OPTIONS.forEach(opt => {
+          const chip = document.createElement('button');
+          chip.className = `track-chip${opt.key === this.ambientEngine.musicChoice ? ' active' : ''}`;
+          chip.textContent = opt.label;
+          chip.addEventListener('click', () => {
+            this.ambientEngine.setMusicChoice(opt.key);
+            this._render();
+          });
+          trackSelect.appendChild(chip);
+        });
+        bodyEl.appendChild(trackSelect);
+
+        // Volume fader
+        this._appendFader(bodyEl, this.ambientEngine.volume, (v) => {
+          this.ambientEngine.setVolume(v);
+        });
+      }
+    }));
+
+    // 3. Crowd channel
     if (this.ambientEngine) {
       const murmurOn = this.ambientEngine.murmurEnabled;
-      soundSection.appendChild(makeCard(
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-        'Crowd', murmurOn,
-        () => { this.ambientEngine.toggleMurmur(); this._render(); },
-        (el) => {
-          el.appendChild(this._createSlider('', Math.round(this.ambientEngine.murmurVolume * 100) + '%', 0, 1, 0.05, this.ambientEngine.murmurVolume, (v) => {
+      mixer.appendChild(this._renderChannel({
+        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        iconClass: murmurOn ? 'on-purple' : 'off',
+        name: 'Crowd',
+        isOn: murmurOn,
+        isOff: !murmurOn,
+        subtitle: murmurOn ? null : 'Train station ambience',
+        onToggle: () => {
+          this.ambientEngine.toggleMurmur();
+          this._render();
+        },
+        renderBody: (bodyEl) => {
+          if (!murmurOn) return;
+          this._appendFader(bodyEl, this.ambientEngine.murmurVolume, (v) => {
             this.ambientEngine.setMurmurVolume(v);
-            return Math.round(v * 100) + '%';
-          }));
+          });
         }
-      ));
+      }));
     }
 
-    this.bodyEl.appendChild(soundSection);
+    this.bodyEl.appendChild(mixer);
 
-    // -- Controls section --
-    const ctrlSection = document.createElement('div');
-    ctrlSection.className = 'sp-section';
-    ctrlSection.innerHTML = '<div class="sp-label">Controls</div>';
+    // Split line
+    this.bodyEl.appendChild(this._splitLine());
+
+    // ===== TEMPO =====
+    const tempoLabel = document.createElement('div');
+    tempoLabel.className = 'section-label';
+    tempoLabel.textContent = 'Tempo';
+    this.bodyEl.appendChild(tempoLabel);
 
     const speedVal = this.rotator.speedMultiplier;
     const speedLabels = { 0.5: 'Fast', 1: 'Normal', 1.5: 'Relaxed', 2: 'Slow', 3: 'Very Slow' };
     const closestLabel = Object.entries(speedLabels).reduce((best, [k, v]) =>
       Math.abs(parseFloat(k) - speedVal) < Math.abs(parseFloat(best[0]) - speedVal) ? [k, v] : best
     );
-    ctrlSection.appendChild(this._createSlider('Rotation Speed', closestLabel[1], 0.5, 3, 0.1, speedVal, (val) => {
+
+    const speedRow = document.createElement('div');
+    speedRow.className = 'speed-row';
+
+    const fastLabel = document.createElement('span');
+    fastLabel.className = 'speed-label';
+    fastLabel.textContent = 'Fast';
+
+    const speedFader = document.createElement('div');
+    speedFader.className = 'speed-fader';
+    const speedInput = document.createElement('input');
+    speedInput.type = 'range';
+    speedInput.min = '0.5';
+    speedInput.max = '3';
+    speedInput.step = '0.1';
+    speedInput.value = speedVal;
+    speedFader.appendChild(speedInput);
+
+    const slowLabel = document.createElement('span');
+    slowLabel.className = 'speed-label right';
+    slowLabel.textContent = 'Slow';
+
+    speedRow.appendChild(fastLabel);
+    speedRow.appendChild(speedFader);
+    speedRow.appendChild(slowLabel);
+    this.bodyEl.appendChild(speedRow);
+
+    const speedCurrent = document.createElement('div');
+    speedCurrent.className = 'speed-current';
+    speedCurrent.textContent = closestLabel[1];
+    this.bodyEl.appendChild(speedCurrent);
+
+    speedInput.addEventListener('input', () => {
+      const val = parseFloat(speedInput.value);
       this.rotator.setSpeed(val);
-      return Object.entries(speedLabels).reduce((best, [k, v]) =>
+      const label = Object.entries(speedLabels).reduce((best, [k, v]) =>
         Math.abs(parseFloat(k) - val) < Math.abs(parseFloat(best[0]) - val) ? [k, v] : best
       )[1];
-    }));
+      speedCurrent.textContent = label;
+    });
 
-    // Family shared toggle
+    // Split line
+    this.bodyEl.appendChild(this._splitLine());
+
+    // ===== FAMILY =====
+    const familyLabel = document.createElement('div');
+    familyLabel.className = 'section-label';
+    familyLabel.textContent = 'Family';
+    this.bodyEl.appendChild(familyLabel);
+
     const sharedOn = this.rotator.showShared;
-    const sharedRow = this._createToggleRow(
-      sharedOn,
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-      sharedOn ? `Family Quotes (${this.rotator.sharedMessages.length})` : 'Family Quotes Off',
-      () => { this.rotator.setShowShared(!this.rotator.showShared); this._render(); }
-    );
-    ctrlSection.appendChild(sharedRow);
+    const familyRow = document.createElement('div');
+    familyRow.className = 'family-row';
 
-    this.bodyEl.appendChild(ctrlSection);
+    const familyInfo = document.createElement('div');
+    familyInfo.className = 'family-info';
+    const familyName = document.createElement('div');
+    familyName.className = 'family-label';
+    familyName.textContent = 'Shared Quotes';
+    const familyCount = document.createElement('div');
+    familyCount.className = 'family-count';
+    familyCount.textContent = sharedOn ? `${this.rotator.sharedMessages.length} from family` : 'Disabled';
+    familyInfo.appendChild(familyName);
+    familyInfo.appendChild(familyCount);
 
-    // -- Divider --
-    const div = document.createElement('div');
-    div.className = 'sp-divider';
-    this.bodyEl.appendChild(div);
+    const familyKnob = document.createElement('div');
+    familyKnob.className = `knob${sharedOn ? ' on' : ''}`;
+    familyKnob.addEventListener('click', () => {
+      this.rotator.setShowShared(!this.rotator.showShared);
+      this._render();
+    });
 
-    // -- Quote Library with tabs --
-    const libSection = document.createElement('div');
-    libSection.className = 'sp-section';
-    libSection.innerHTML = '<div class="sp-label">Quote Library</div>';
+    familyRow.appendChild(familyInfo);
+    familyRow.appendChild(familyKnob);
+    this.bodyEl.appendChild(familyRow);
 
-    // Tab bar
-    const tabs = document.createElement('div');
-    tabs.className = 'sp-tabs';
+    // Split line
+    this.bodyEl.appendChild(this._splitLine());
 
-    const allTabs = [
-      { key: 'my-quotes', label: 'My Quotes', count: this.messages.length },
-      ...THEME_KEYS.map(k => ({
+    // ===== LIBRARY =====
+    const libLabel = document.createElement('div');
+    libLabel.className = 'section-label';
+    libLabel.textContent = 'Library';
+    this.bodyEl.appendChild(libLabel);
+
+    // Theme grid
+    const themeGrid = document.createElement('div');
+    themeGrid.className = 'theme-grid';
+
+    // My Quotes tile
+    const myTile = this._renderThemeTile({
+      key: 'my-quotes',
+      label: 'My Quotes',
+      count: this.messages.length,
+      color: TILE_COLORS[0],
+      isActive: this._activeTab === 'my-quotes',
+      inRotation: true, // always in rotation
+    });
+    themeGrid.appendChild(myTile);
+
+    // Theme tiles
+    THEME_KEYS.forEach((k, i) => {
+      const isEnabled = this.rotator.enabledThemes.includes(k);
+      const tile = this._renderThemeTile({
         key: k,
         label: THEMES[k].label,
         count: this._getThemeMessages(k).length,
-        enabled: this.rotator.enabledThemes.includes(k),
-      })),
-    ];
-
-    allTabs.forEach(t => {
-      const tab = document.createElement('button');
-      tab.className = `sp-tab${this._activeTab === t.key ? ' active' : ''}`;
-      const countHtml = `<span class="sp-tab-count">${t.count}</span>`;
-      const dotHtml = t.enabled === false ? ' <span style="color:rgba(255,255,255,0.15)">off</span>' : '';
-      tab.innerHTML = t.label + countHtml + dotHtml;
-      tab.addEventListener('click', () => {
-        this._activeTab = t.key;
-        this._render();
+        color: TILE_COLORS[(i + 1) % TILE_COLORS.length],
+        isActive: this._activeTab === k,
+        inRotation: isEnabled,
       });
-      tabs.appendChild(tab);
+      themeGrid.appendChild(tile);
     });
 
-    libSection.appendChild(tabs);
+    this.bodyEl.appendChild(themeGrid);
 
-    // Tab content
-    const content = document.createElement('div');
+    // Quote area for active tab
+    const quoteArea = document.createElement('div');
+    quoteArea.className = 'quote-area';
 
     if (this._activeTab === 'my-quotes') {
-      // My Quotes tab
+      // My Quotes content
       this.messages.forEach((msg, i) => {
-        content.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
+        quoteArea.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
       });
 
       const addBtn = document.createElement('button');
-      addBtn.className = 'sp-add-quote';
+      addBtn.className = 'add-quote-btn';
       addBtn.textContent = '+ Add Quote';
       addBtn.addEventListener('click', () => {
         this.messages.push(Array(GRID_ROWS).fill(''));
@@ -636,36 +1169,40 @@ export class SettingsPanel {
         this._render();
         this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
       });
-      content.appendChild(addBtn);
+      quoteArea.appendChild(addBtn);
     } else {
-      // Theme tab
+      // Theme tab content
       const themeKey = this._activeTab;
       const msgs = this._getThemeMessages(themeKey);
       const isEnabled = this.rotator.enabledThemes.includes(themeKey);
 
-      // Enable/disable toggle for this theme
-      const toggleRow = this._createToggleRow(
-        isEnabled,
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
-        isEnabled ? 'In Rotation' : 'Not in Rotation',
-        () => {
-          const current = [...this.rotator.enabledThemes];
-          const idx = current.indexOf(themeKey);
-          if (idx >= 0) { if (current.length > 1) current.splice(idx, 1); }
-          else { current.push(themeKey); }
-          this.rotator.setEnabledThemes(current);
-          this._render();
-        }
-      );
-      toggleRow.style.marginBottom = '12px';
-      content.appendChild(toggleRow);
+      // Rotation toggle
+      const rotToggle = document.createElement('div');
+      rotToggle.className = 'rotation-toggle';
+      const rotLabel = document.createElement('span');
+      rotLabel.className = 'rotation-label';
+      rotLabel.textContent = isEnabled ? 'In rotation' : 'Not in rotation';
+      const rotKnob = document.createElement('div');
+      rotKnob.className = `knob${isEnabled ? ' on' : ''}`;
+      rotKnob.addEventListener('click', () => {
+        const current = [...this.rotator.enabledThemes];
+        const idx = current.indexOf(themeKey);
+        if (idx >= 0) { if (current.length > 1) current.splice(idx, 1); }
+        else { current.push(themeKey); }
+        this.rotator.setEnabledThemes(current);
+        this._render();
+      });
+      rotToggle.appendChild(rotLabel);
+      rotToggle.appendChild(rotKnob);
+      quoteArea.appendChild(rotToggle);
 
+      // Quote cards
       msgs.forEach((msg, i) => {
-        content.appendChild(this._renderQuoteCard(msg, i, themeKey, msgs));
+        quoteArea.appendChild(this._renderQuoteCard(msg, i, themeKey, msgs));
       });
 
       const addBtn = document.createElement('button');
-      addBtn.className = 'sp-add-quote';
+      addBtn.className = 'add-quote-btn';
       addBtn.textContent = `+ Add ${THEMES[themeKey]?.label || ''} Quote`;
       addBtn.addEventListener('click', () => {
         msgs.push(Array(GRID_ROWS).fill(''));
@@ -673,7 +1210,7 @@ export class SettingsPanel {
         this._render();
         this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
       });
-      content.appendChild(addBtn);
+      quoteArea.appendChild(addBtn);
 
       // Reset to defaults
       if (this.themeEdits[themeKey]) {
@@ -685,14 +1222,13 @@ export class SettingsPanel {
           this._saveEdits();
           this._render();
         });
-        content.appendChild(resetBtn);
+        quoteArea.appendChild(resetBtn);
       }
     }
 
-    libSection.appendChild(content);
-    this.bodyEl.appendChild(libSection);
+    this.bodyEl.appendChild(quoteArea);
 
-    // -- Stats --
+    // Stats
     let total = this.messages.length;
     for (const key of this.rotator.enabledThemes) {
       total += this._getThemeMessages(key).length;
@@ -704,17 +1240,105 @@ export class SettingsPanel {
     this.bodyEl.appendChild(stats);
   }
 
-  _createToggleRow(active, iconSvg, label, onClick) {
-    const row = document.createElement('div');
-    row.className = 'sp-ambient-row';
-    const btn = document.createElement('button');
-    btn.className = `sp-ambient-toggle${active ? ' active' : ''}`;
-    btn.innerHTML = `
-      <span class="sp-ambient-icon">${iconSvg}</span>
-      <span class="sp-ambient-label">${label}</span>
-    `;
-    btn.addEventListener('click', onClick);
-    row.appendChild(btn);
-    return row;
+  _renderChannel({ iconSvg, iconClass, name, isOn, isOff, subtitle, onToggle, renderBody }) {
+    const channel = document.createElement('div');
+    channel.className = `channel${isOff ? ' off' : ''}`;
+
+    const icon = document.createElement('div');
+    icon.className = `channel-icon ${iconClass}`;
+    icon.innerHTML = iconSvg;
+
+    const body = document.createElement('div');
+    body.className = 'channel-body';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'channel-name';
+    nameEl.textContent = name;
+    body.appendChild(nameEl);
+
+    if (subtitle && isOff) {
+      const sub = document.createElement('div');
+      sub.className = 'channel-sub';
+      sub.textContent = subtitle;
+      body.appendChild(sub);
+    }
+
+    if (renderBody) renderBody(body);
+
+    const knob = document.createElement('div');
+    knob.className = `knob${isOn ? ' on' : ''}`;
+    knob.addEventListener('click', onToggle);
+
+    channel.appendChild(icon);
+    channel.appendChild(body);
+    channel.appendChild(knob);
+
+    return channel;
+  }
+
+  _appendFader(parentEl, value, onChange) {
+    const fader = document.createElement('div');
+    fader.className = 'fader';
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '1';
+    input.step = '0.05';
+    input.value = value;
+
+    const valEl = document.createElement('span');
+    valEl.className = 'fader-val';
+    valEl.textContent = Math.round(value * 100) + '%';
+
+    input.addEventListener('input', () => {
+      const v = parseFloat(input.value);
+      onChange(v);
+      valEl.textContent = Math.round(v * 100) + '%';
+    });
+
+    fader.appendChild(input);
+    fader.appendChild(valEl);
+    parentEl.appendChild(fader);
+  }
+
+  _renderThemeTile({ key, label, count, color, isActive, inRotation }) {
+    const tile = document.createElement('button');
+    tile.style.cssText = `--tile-color: ${color}`;
+    let tileClass = 'theme-tile';
+    if (isActive) tileClass += ' active';
+    if (!inRotation) tileClass += ' off';
+    tile.className = tileClass;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'theme-name';
+    nameEl.textContent = label;
+
+    // Blue dot if in rotation (and not the active tab, to keep it clean)
+    if (inRotation && key !== 'my-quotes') {
+      const dot = document.createElement('span');
+      dot.className = 'theme-dot';
+      nameEl.appendChild(dot);
+    }
+
+    const countEl = document.createElement('div');
+    countEl.className = 'theme-count';
+    countEl.textContent = count;
+
+    tile.appendChild(nameEl);
+    tile.appendChild(countEl);
+
+    tile.addEventListener('click', () => {
+      this._activeTab = key;
+      this._render();
+    });
+
+    return tile;
+  }
+
+  _splitLine() {
+    const line = document.createElement('div');
+    line.className = 'split-line';
+    return line;
   }
 }
