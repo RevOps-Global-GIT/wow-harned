@@ -99,7 +99,7 @@ export const THEMES = {
       ['', '', 'THIS TOO', 'SHALL PASS', '', '- PERSIAN', 'PROVERB', ''],
       ['', 'THE BEST WAY', 'OUT IS ALWAYS', 'THROUGH', '', '- ROBERT FROST', '', ''],
       ['', 'WHAT YOU SEEK', 'IS SEEKING', 'YOU', '', '- RUMI', '', ''],
-      ['', 'BE THE CHANGE', 'YOU WISH TO', 'SEE IN THE', 'WORLD', '', '- GANDHI', ''],
+      ['', 'IN A GENTLE', 'WAY YOU CAN', 'SHAKE THE', 'WORLD', '', '- GANDHI', ''],
       ['', 'THE WOUND IS', 'THE PLACE', 'WHERE THE', 'LIGHT ENTERS', '', '- RUMI', ''],
       ['', 'NOT ALL WHO', 'WANDER', 'ARE LOST', '', '- TOLKIEN', '', ''],
       ['', 'FALL SEVEN', 'TIMES STAND', 'UP EIGHT', '', '- JAPANESE', 'PROVERB', ''],

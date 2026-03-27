@@ -1240,34 +1240,77 @@ export class SettingsPanel {
 
     this.bodyEl.appendChild(themeGrid);
 
-    // Quote area for active tab
+    // Quote area
     const quoteArea = document.createElement('div');
     quoteArea.className = 'quote-area';
-    this._quoteAreaEl = quoteArea;
 
     const query = (this._searchQuery || '').toLowerCase().trim();
 
-    // Search filter helper
     const matchesSearch = (msg) => {
       if (!query) return true;
       const { body, attr } = this._quotePreview(msg);
       return body.toLowerCase().includes(query) || attr.toLowerCase().includes(query);
     };
 
-    if (this._activeTab === 'my-quotes') {
-      // My Quotes content
-      let shown = 0;
+    // SEARCH MODE: show results from ALL themes
+    if (query) {
+      let totalResults = 0;
+
+      // Search My Quotes
+      const myMatches = [];
       this.messages.forEach((msg, i) => {
-        if (!matchesSearch(msg)) return;
-        quoteArea.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
-        shown++;
+        if (matchesSearch(msg)) myMatches.push({ msg, i });
       });
-      if (query && shown === 0) {
+      if (myMatches.length > 0) {
+        const groupLabel = document.createElement('div');
+        groupLabel.className = 'search-results-label';
+        groupLabel.textContent = 'My Quotes';
+        groupLabel.style.marginTop = '4px';
+        quoteArea.appendChild(groupLabel);
+        myMatches.forEach(({ msg, i }) => {
+          quoteArea.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
+        });
+        totalResults += myMatches.length;
+      }
+
+      // Search each theme
+      THEME_KEYS.forEach(k => {
+        const msgs = this._getThemeMessages(k);
+        const matches = [];
+        msgs.forEach((msg, i) => {
+          if (matchesSearch(msg)) matches.push({ msg, i });
+        });
+        if (matches.length > 0) {
+          const groupLabel = document.createElement('div');
+          groupLabel.className = 'search-results-label';
+          groupLabel.textContent = THEMES[k].label;
+          groupLabel.style.marginTop = totalResults > 0 ? '16px' : '4px';
+          quoteArea.appendChild(groupLabel);
+          matches.forEach(({ msg, i }) => {
+            quoteArea.appendChild(this._renderQuoteCard(msg, i, k, msgs));
+          });
+          totalResults += matches.length;
+        }
+      });
+
+      if (totalResults === 0) {
         const noResults = document.createElement('div');
         noResults.className = 'search-results-label';
         noResults.textContent = 'No quotes match "' + this._searchQuery + '"';
         quoteArea.appendChild(noResults);
+      } else {
+        const countLabel = document.createElement('div');
+        countLabel.className = 'search-results-label';
+        countLabel.style.marginTop = '12px';
+        countLabel.textContent = totalResults + ' result' + (totalResults !== 1 ? 's' : '');
+        quoteArea.appendChild(countLabel);
       }
+
+    } else if (this._activeTab === 'my-quotes') {
+      // My Quotes content (no search)
+      this.messages.forEach((msg, i) => {
+        quoteArea.appendChild(this._renderQuoteCard(msg, i, 'my-quotes', this.messages));
+      });
 
       const addBtn = document.createElement('button');
       addBtn.className = 'add-quote-btn';
@@ -1305,19 +1348,10 @@ export class SettingsPanel {
       rotToggle.appendChild(rotKnob);
       quoteArea.appendChild(rotToggle);
 
-      // Quote cards (filtered by search)
-      let shownTheme = 0;
+      // Quote cards
       msgs.forEach((msg, i) => {
-        if (!matchesSearch(msg)) return;
         quoteArea.appendChild(this._renderQuoteCard(msg, i, themeKey, msgs));
-        shownTheme++;
       });
-      if (query && shownTheme === 0) {
-        const noResults = document.createElement('div');
-        noResults.className = 'search-results-label';
-        noResults.textContent = 'No quotes match "' + this._searchQuery + '"';
-        quoteArea.appendChild(noResults);
-      }
 
       const addBtn = document.createElement('button');
       addBtn.className = 'add-quote-btn';
