@@ -41,12 +41,12 @@
   }
 
   .accent-bar-left {
-    top: 8px;
+    top: calc(env(safe-area-inset-top, 20px) + 4px);
     left: 50%;
   }
 
   .accent-bar-right {
-    bottom: 8px;
+    bottom: calc(env(safe-area-inset-bottom, 8px) + 4px);
     top: auto;
     right: auto;
     left: 50%;

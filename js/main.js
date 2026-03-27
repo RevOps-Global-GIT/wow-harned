@@ -56,8 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Portrait: width-constrained tiles with taller aspect ratio
       const gap = 1;
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
-      // Height: fill ~95% of viewport for full-bleed feel
-      const targetH = vh * 0.95;
+      // Account for safe areas (Dynamic Island ~59px, home indicator ~34px)
+      const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 59;
+      const safeBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 34;
+      const usableH = vh - safeTop - safeBottom;
+      const targetH = usableH * 0.92;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');
