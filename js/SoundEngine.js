@@ -17,7 +17,7 @@ export class SoundEngine {
 
     try {
       const saved = localStorage.getItem(CLICK_VOL_KEY);
-      this.clickVolume = saved !== null ? parseFloat(saved) : 0.8;
+      this.clickVolume = saved !== null ? parseFloat(saved) : 0.15;
     } catch {
       this.clickVolume = 0.8;
     }

@@ -25,8 +25,8 @@ export class AmbientEngine {
 
     try {
       const saved = localStorage.getItem(AMBIENT_VOL_KEY);
-      this.volume = saved !== null ? parseFloat(saved) : 0.5;
-    } catch { this.volume = 0.5; }
+      this.volume = saved !== null ? parseFloat(saved) : 0.10;
+    } catch { this.volume = 0.10; }
 
     try {
       const mv = localStorage.getItem(MURMUR_KEY);
@@ -35,8 +35,8 @@ export class AmbientEngine {
 
     try {
       const mvol = localStorage.getItem(MURMUR_VOL_KEY);
-      this.murmurVolume = mvol !== null ? parseFloat(mvol) : 0.5;
-    } catch { this.murmurVolume = 0.5; }
+      this.murmurVolume = mvol !== null ? parseFloat(mvol) : 0.10;
+    } catch { this.murmurVolume = 0.10; }
 
     try {
       this.musicChoice = localStorage.getItem(MUSIC_KEY) || 'piano-jazz';
@@ -208,6 +208,16 @@ export class AmbientEngine {
 
     this._running = true;
 
+    // Keep audio session alive when screen locks (iOS)
+    // A looping <audio> element prevents Safari from suspending Web Audio
+    if (!this._keepAlive) {
+      this._keepAlive = document.createElement('audio');
+      this._keepAlive.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBqpAAAAAAD/+1DEAAAH+AJX9AAAIiMGSz8wAABFgBAAKAAHBAEDPnPggCAIHJKAgGP8oCAJ/y4f/Lh/8uH4IAQBD6gICAYPl3/5c//BAEHwfB8oCCoBh+X//y7///ggCAJwfUBAQDAMf////4IAgCcH1AQEAx/////+CAIAnB9QEBAMP/////ggCAIAfB8=';
+      this._keepAlive.loop = true;
+      this._keepAlive.volume = 0.01;
+      this._keepAlive.play().catch(() => {});
+    }
+
     // Master output
     this._masterGain = ctx.createGain();
     this._masterGain.gain.value = 1;
@@ -241,6 +251,10 @@ export class AmbientEngine {
 
   stop() {
     this._running = false;
+    if (this._keepAlive) {
+      this._keepAlive.pause();
+      this._keepAlive = null;
+    }
     const ctx = this.soundEngine.ctx;
 
     // Clear all timers
