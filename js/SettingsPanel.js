@@ -966,7 +966,62 @@ export class SettingsPanel {
       } else {
         this._setThemeMessages(themeKey, messages);
       }
-      this._render();
+
+      // Show "Share with family?" prompt
+      container.innerHTML = '';
+      const sharePrompt = document.createElement('div');
+      sharePrompt.style.cssText = 'text-align:center;padding:16px 0;';
+
+      const checkIcon = document.createElement('div');
+      checkIcon.style.cssText = 'color:#00ffcc;font-size:24px;margin-bottom:8px;';
+      checkIcon.textContent = '\u2713';
+      sharePrompt.appendChild(checkIcon);
+
+      const savedLabel = document.createElement('div');
+      savedLabel.style.cssText = 'color:#fff;font-size:14px;font-weight:600;margin-bottom:12px;';
+      savedLabel.textContent = 'Saved!';
+      sharePrompt.appendChild(savedLabel);
+
+      const shareQ = document.createElement('div');
+      shareQ.style.cssText = 'color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:12px;';
+      shareQ.textContent = 'Share this quote with your family?';
+      sharePrompt.appendChild(shareQ);
+
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:10px;justify-content:center;';
+
+      const noBtn = document.createElement('button');
+      noBtn.style.cssText = 'padding:8px 20px;border-radius:6px;background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;cursor:pointer;';
+      noBtn.textContent = 'Keep Local';
+      noBtn.addEventListener('click', () => this._render());
+
+      const yesBtn = document.createElement('button');
+      yesBtn.style.cssText = 'padding:8px 20px;border-radius:6px;background:rgba(0,255,204,0.12);border:none;color:#00ffcc;font-size:12px;font-weight:600;cursor:pointer;';
+      yesBtn.textContent = 'Share with Family';
+      yesBtn.addEventListener('click', async () => {
+        yesBtn.textContent = 'Sharing...';
+        yesBtn.style.opacity = '0.5';
+        const name = prompt('Your name:');
+        if (name) {
+          const { shareMessage } = await import('./sharedMessages.js');
+          const ok = await shareMessage(newLines, name);
+          if (ok) {
+            this.rotator._loadShared();
+            yesBtn.textContent = 'Shared!';
+            setTimeout(() => this._render(), 1000);
+          } else {
+            yesBtn.textContent = 'Failed';
+            setTimeout(() => this._render(), 1500);
+          }
+        } else {
+          this._render();
+        }
+      });
+
+      btnRow.appendChild(noBtn);
+      btnRow.appendChild(yesBtn);
+      sharePrompt.appendChild(btnRow);
+      container.appendChild(sharePrompt);
     });
 
     actions.appendChild(cancelBtn);
