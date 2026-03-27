@@ -943,6 +943,7 @@ export class SettingsPanel {
       isOn: clickOn,
       isOff: !clickOn,
       onToggle: () => {
+        if (window.__ensureAudioInit) window.__ensureAudioInit();
         if (this.rotator.board.soundEngine) {
           this.rotator.board.soundEngine.toggleMute();
           this._render();
@@ -966,6 +967,7 @@ export class SettingsPanel {
       isOn: ambientOn,
       isOff: !ambientOn,
       onToggle: () => {
+        if (window.__ensureAudioInit) window.__ensureAudioInit();
         if (this.ambientEngine) {
           this.ambientEngine.toggle();
           this._render();
@@ -1006,6 +1008,7 @@ export class SettingsPanel {
         isOff: !murmurOn,
         subtitle: murmurOn ? null : 'Train station ambience',
         onToggle: () => {
+          if (window.__ensureAudioInit) window.__ensureAudioInit();
           this.ambientEngine.toggleMurmur();
           this._render();
         },

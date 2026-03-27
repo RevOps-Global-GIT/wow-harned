@@ -40,18 +40,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Poll for audio unlock from inline <script> in HTML
   let audioInitialized = false;
-  const pollForAudio = setInterval(() => {
+  const initAudioIfReady = () => {
     if (window.__audioReady && !audioInitialized) {
       audioInitialized = true;
-      clearInterval(pollForAudio);
-
       soundEngine.init();
       if (tapHint) tapHint.classList.add('hidden');
       if (ambientEngine.enabled) {
         setTimeout(() => ambientEngine.start(), 500);
       }
     }
+  };
+  const pollForAudio = setInterval(() => {
+    initAudioIfReady();
+    if (audioInitialized) clearInterval(pollForAudio);
   }, 100);
+
+  // Also init audio when any sound toggle is used in settings
+  window.__ensureAudioInit = initAudioIfReady;
 
   // Dynamic tile sizing: fill the viewport
   const resizeTiles = () => {
