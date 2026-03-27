@@ -68,12 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.removeEventListener('click', initAudio);
-    document.removeEventListener('touchend', initAudio);
+    document.body.removeEventListener('click', initAudio);
+    document.body.removeEventListener('touchend', initAudio);
+    boardContainer.removeEventListener('click', initAudio);
+    boardContainer.removeEventListener('touchend', initAudio);
     document.removeEventListener('keydown', initAudio);
   };
-  // click + touchend only — touchstart is unreliable on iOS 17+
+  // Listen on multiple targets — iOS may not bubble to document
   document.addEventListener('click', initAudio);
-  document.addEventListener('touchend', initAudio);
+  document.body.addEventListener('click', initAudio);
+  document.body.addEventListener('touchend', initAudio);
+  boardContainer.addEventListener('click', initAudio);
+  boardContainer.addEventListener('touchend', initAudio);
   document.addEventListener('keydown', initAudio);
 
   // Dynamic tile sizing: fill the viewport
