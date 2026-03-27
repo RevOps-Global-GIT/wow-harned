@@ -229,6 +229,9 @@ export const THEMES = {
 
       // Pam
       ['', 'PATIENCE IS', 'A VIRTUE', 'ESPECIALLY', 'WHEN MARRIED', 'TO A HARNED', '', '- PAM HARNED'],
+
+      // Uncle Bob
+      ['', '', '', 'BE LIKE BOB', '', '', '- BOB HARNED', ''],
     ]
   },
   contemplative: {
