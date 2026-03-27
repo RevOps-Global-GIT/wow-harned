@@ -77,14 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
       board.boardEl.style.setProperty('--tile-font', Math.floor(tileW * 0.55) + 'px');
       board.boardEl.classList.add('portrait-mode');
     } else if (vw <= 900 && vh < vw) {
-      // Mobile landscape: fill width and height
-      const gap = 2;
+      // Mobile landscape: rectangular tiles, fill both dimensions independently
+      const gap = 1;
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
       const tileH = Math.floor((vh * 0.95 - (r + 1) * gap) / r);
-      const tileSize = Math.min(tileW, tileH);
-      board.boardEl.style.setProperty('--tile-size', tileSize + 'px');
-      board.boardEl.style.setProperty('--tile-h', tileSize + 'px');
+      board.boardEl.style.setProperty('--tile-size', tileW + 'px');
+      board.boardEl.style.setProperty('--tile-h', tileH + 'px');
       board.boardEl.style.setProperty('--tile-gap', gap + 'px');
+      board.boardEl.style.setProperty('--tile-font', Math.floor(Math.min(tileW, tileH) * 0.52) + 'px');
       board.boardEl.classList.remove('portrait-mode');
     } else {
       // Desktop: square tiles, fit both dimensions
