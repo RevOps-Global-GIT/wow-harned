@@ -80,13 +80,21 @@ export class AmbientEngine {
   toggleMurmur() {
     this.murmurEnabled = !this.murmurEnabled;
     localStorage.setItem(MURMUR_KEY, String(this.murmurEnabled));
-    if (this._running) {
-      if (this.murmurEnabled) {
-        this._startMurmur();
-      } else {
-        this._stopMurmur();
+
+    if (this.murmurEnabled) {
+      // Auto-enable ambient if not already running (murmur needs it)
+      if (!this._running) {
+        this.enabled = true;
+        this._saveState();
+        this.start();
       }
+      if (this._running) {
+        this._startMurmur();
+      }
+    } else if (this._running) {
+      this._stopMurmur();
     }
+
     return this.murmurEnabled;
   }
 
@@ -385,14 +393,14 @@ export class AmbientEngine {
     // Each is bandpass-filtered noise with LFO amplitude modulation
     const voiceConfigs = [
       // Lower male-ish voices
-      { freq: 280, Q: 1.5, lfoRate: 0.08, lfoDepth: 0.6, gain: 0.18 },
-      { freq: 350, Q: 1.2, lfoRate: 0.12, lfoDepth: 0.5, gain: 0.15 },
+      { freq: 280, Q: 1.5, lfoRate: 0.08, lfoDepth: 0.6, gain: 0.45 },
+      { freq: 350, Q: 1.2, lfoRate: 0.12, lfoDepth: 0.5, gain: 0.38 },
       // Mid voices
-      { freq: 500, Q: 1.8, lfoRate: 0.06, lfoDepth: 0.7, gain: 0.12 },
-      { freq: 800, Q: 1.0, lfoRate: 0.15, lfoDepth: 0.4, gain: 0.10 },
+      { freq: 500, Q: 1.8, lfoRate: 0.06, lfoDepth: 0.7, gain: 0.30 },
+      { freq: 800, Q: 1.0, lfoRate: 0.15, lfoDepth: 0.4, gain: 0.25 },
       // Higher female-ish voices
-      { freq: 1200, Q: 2.0, lfoRate: 0.10, lfoDepth: 0.6, gain: 0.07 },
-      { freq: 2200, Q: 1.5, lfoRate: 0.09, lfoDepth: 0.5, gain: 0.04 },
+      { freq: 1200, Q: 2.0, lfoRate: 0.10, lfoDepth: 0.6, gain: 0.18 },
+      { freq: 2200, Q: 1.5, lfoRate: 0.09, lfoDepth: 0.5, gain: 0.10 },
     ];
 
     voiceConfigs.forEach(vc => {
@@ -467,10 +475,10 @@ export class AmbientEngine {
     sibLfo.frequency.value = 0.3;
 
     const sibLfoGain = ctx.createGain();
-    sibLfoGain.gain.value = 0.008;
+    sibLfoGain.gain.value = 0.02;
 
     const sibGain = ctx.createGain();
-    sibGain.gain.value = 0.008;
+    sibGain.gain.value = 0.02;
 
     sibLfo.connect(sibLfoGain);
     sibLfoGain.connect(sibGain.gain);
