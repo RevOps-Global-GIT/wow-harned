@@ -49,6 +49,16 @@
     }
     .tap-hint.hidden { opacity: 0; pointer-events: none; }
 
+    /* Mobile portrait — fill entire viewport */
+    @media (max-width: 600px) and (orientation: portrait) {
+      .board-wrap {
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 0;
+      }
+      .tap-hint { display: none; }
+    }
+
     /* iOS home screen banner */
     .ios-banner {
       position: fixed;
@@ -101,7 +111,7 @@
 </head>
 <body>
   <div class="board-wrap" id="board-container"></div>
-  <div class="tap-hint" id="tap-hint">tap to start . double-tap for settings</div>
+  <div class="tap-hint" id="tap-hint">double-tap for settings</div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
