@@ -64,8 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Portrait: fill as much vertical space as possible
       // Minimal margins so top/bottom asymmetry is barely visible
       const gap = 1;
+      const topPad = 60; // matches CSS padding-top for Dynamic Island
       const tileW = Math.floor((vw - (c + 1) * gap) / c);
-      const targetH = vh * 0.94;
+      const targetH = (vh - topPad) * 0.96;
       const tileH = Math.floor((targetH - (r + 1) * gap) / r);
       board.boardEl.style.setProperty('--tile-size', tileW + 'px');
       board.boardEl.style.setProperty('--tile-h', tileH + 'px');
