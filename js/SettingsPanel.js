@@ -927,22 +927,27 @@ export class SettingsPanel {
     container.innerHTML = '';
     container.className = 'quote-edit-mode';
 
+    const quoteLabel = document.createElement('div');
+    quoteLabel.className = 'quote-edit-hint';
+    quoteLabel.textContent = 'Quote';
+    container.appendChild(quoteLabel);
+
     const bodyTextarea = document.createElement('textarea');
     bodyTextarea.rows = 3;
-    bodyTextarea.placeholder = 'Type your quote naturally...';
+    bodyTextarea.placeholder = 'Type your quote here...';
     bodyTextarea.value = body;
     container.appendChild(bodyTextarea);
 
-    const hint = document.createElement('div');
-    hint.className = 'quote-edit-hint';
-    hint.textContent = 'Separate author with a dash on a new line';
-    container.appendChild(hint);
+    const authorLabel = document.createElement('div');
+    authorLabel.className = 'quote-edit-hint';
+    authorLabel.textContent = 'Author';
+    authorLabel.style.marginTop = '8px';
+    container.appendChild(authorLabel);
 
     const authorTextarea = document.createElement('textarea');
     authorTextarea.rows = 1;
-    authorTextarea.placeholder = '- Author name';
+    authorTextarea.placeholder = 'Name';
     authorTextarea.value = author;
-    authorTextarea.style.marginTop = '6px';
     authorTextarea.style.fontStyle = 'italic';
     authorTextarea.style.color = 'rgba(255,255,255,0.5)';
     container.appendChild(authorTextarea);
