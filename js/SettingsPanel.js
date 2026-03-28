@@ -947,6 +947,9 @@ export class SettingsPanel {
     authorTextarea.style.color = 'rgba(255,255,255,0.5)';
     container.appendChild(authorTextarea);
 
+    // Scroll edit form into view so save/cancel buttons are reachable
+    requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+
     const actions = document.createElement('div');
     actions.className = 'quote-edit-actions';
 
@@ -1374,7 +1377,14 @@ export class SettingsPanel {
         this.messages.push(Array(GRID_ROWS).fill(''));
         this._saveCustom();
         this._render();
-        this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
+        // Auto-open edit mode on the newly added card
+        const cards = this.bodyEl.querySelectorAll('.quote-swipe');
+        const lastCard = cards[cards.length - 1];
+        if (lastCard) {
+          const newIndex = this.messages.length - 1;
+          this._enterEditMode(lastCard, this.messages[newIndex], newIndex, 'my-quotes', this.messages);
+          requestAnimationFrame(() => lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        }
       });
       quoteArea.appendChild(addBtn);
     } else {
@@ -1415,7 +1425,14 @@ export class SettingsPanel {
         msgs.push(Array(GRID_ROWS).fill(''));
         this._setThemeMessages(themeKey, msgs);
         this._render();
-        this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
+        // Auto-open edit mode on the newly added card
+        const cards = this.bodyEl.querySelectorAll('.quote-swipe');
+        const lastCard = cards[cards.length - 1];
+        if (lastCard) {
+          const newIndex = msgs.length - 1;
+          this._enterEditMode(lastCard, msgs[newIndex], newIndex, themeKey, msgs);
+          requestAnimationFrame(() => lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        }
       });
       quoteArea.appendChild(addBtn);
 
