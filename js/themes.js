@@ -191,7 +191,7 @@ export const THEMES = {
     ]
   },
   harned: {
-    label: 'Harned Mode',
+    label: 'Harned Wisdom',
     messages: [
       // Zach takes credit for famous quotes
       ['', 'BE THE CHANGE', 'YOU WISH TO', 'SEE IN THE', 'WORLD', '', '- ZACH HARNED', ''],
